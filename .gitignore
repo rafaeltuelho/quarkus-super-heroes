@@ -40,3 +40,4 @@ nb-configuration.xml
 .env
 .jpb
 **/deploy/k8s/gen
+rest-villains/src/main/resources/test.sql

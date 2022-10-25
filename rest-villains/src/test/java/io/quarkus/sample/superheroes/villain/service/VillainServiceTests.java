@@ -1,11 +1,21 @@
 package io.quarkus.sample.superheroes.villain.service;
 
-import static org.assertj.core.api.Assertions.*;
-import static org.junit.jupiter.params.ParameterizedTest.*;
-import static org.mockito.Mockito.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.catchThrowableOfType;
+import static org.assertj.core.api.Assertions.tuple;
+import static org.junit.jupiter.params.ParameterizedTest.ARGUMENTS_WITH_NAMES_PLACEHOLDER;
+import static org.junit.jupiter.params.ParameterizedTest.DISPLAY_NAME_PLACEHOLDER;
+import static org.junit.jupiter.params.ParameterizedTest.INDEX_PLACEHOLDER;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyIterable;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Produces;
@@ -21,6 +31,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mockito;
 
 import io.quarkus.panache.mock.PanacheMock;
+import io.quarkus.sample.superheroes.villain.Power;
 import io.quarkus.sample.superheroes.villain.Villain;
 import io.quarkus.sample.superheroes.villain.config.VillainConfig;
 import io.quarkus.sample.superheroes.villain.mapping.VillainFullUpdateMapper;
@@ -28,7 +39,6 @@ import io.quarkus.sample.superheroes.villain.mapping.VillainPartialUpdateMapper;
 import io.quarkus.test.Mock;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
-
 import io.smallrye.config.SmallRyeConfig;
 
 @QuarkusTest
@@ -39,8 +49,8 @@ class VillainServiceTests {
 	private static final String UPDATED_OTHER_NAME = DEFAULT_OTHER_NAME + " (updated)";
 	private static final String DEFAULT_PICTURE = "super_chocolatine.png";
 	private static final String UPDATED_PICTURE = "super_chocolatine_updated.png";
-	private static final String DEFAULT_POWERS = "does not eat pain au chocolat";
-	private static final String UPDATED_POWERS = DEFAULT_POWERS + " (updated)";
+	private static final Set<Power> DEFAULT_POWERS = Set.of(new Power("chocolat", "Base", 10, "", "does not eat pain au chocolat"));
+	private static final Set<Power> UPDATED_POWERS = Set.of(new Power("dark chocolat", "Base", 99, "", "does not eat pain au dark chocolat"));
 	private static final int DEFAULT_LEVEL = 42;
 	private static final int UPDATED_LEVEL = DEFAULT_LEVEL + 1;
 	private static final Long DEFAULT_ID = 1L;
@@ -525,8 +535,10 @@ class VillainServiceTests {
 
 	@Test
 	public void partiallyUpdateVillain() {
-		PanacheMock.mock(Villain.class);
+		PanacheMock.mock(Villain.class, Power.class);//, Power.class
 		when(Villain.findByIdOptional(eq(DEFAULT_ID))).thenReturn(Optional.of(createDefaultVillian()));
+		var mockedPower = UPDATED_POWERS.iterator().next();
+		when(Power.findByName(any(String.class))).thenReturn(Optional.of(mockedPower));
 
 		assertThat(this.villainService.partialUpdateVillain(createPartialUpdatedVillain()))
 			.isNotNull()
@@ -551,6 +563,8 @@ class VillainServiceTests {
 
 		PanacheMock.verify(Villain.class).findByIdOptional(eq(DEFAULT_ID));
 		PanacheMock.verifyNoMoreInteractions(Villain.class);
+		PanacheMock.verify(Power.class).findByName(any(String.class));
+		PanacheMock.verifyNoMoreInteractions(Power.class);
 		Mockito.verify(this.villainPartialUpdateMapper).mapPartialUpdate(any(Villain.class), any(Villain.class));
 		Mockito.verifyNoInteractions(this.villainFullUpdateMapper);
 	}
@@ -613,7 +627,7 @@ class VillainServiceTests {
 		villain.name = DEFAULT_NAME;
 		villain.otherName = DEFAULT_OTHER_NAME;
 		villain.picture = DEFAULT_PICTURE;
-		villain.powers = DEFAULT_POWERS;
+		villain.addAllPowers(DEFAULT_POWERS);
 		villain.level = DEFAULT_LEVEL;
 
 		return villain;
@@ -624,7 +638,7 @@ class VillainServiceTests {
 		villain.name = UPDATED_NAME;
 		villain.otherName = UPDATED_OTHER_NAME;
 		villain.picture = UPDATED_PICTURE;
-		villain.powers = UPDATED_POWERS;
+		villain.updatePowers(UPDATED_POWERS);
 		villain.level = UPDATED_LEVEL;
 
 		return villain;
@@ -633,7 +647,7 @@ class VillainServiceTests {
 	public static Villain createPartialUpdatedVillain() {
 		Villain villain = createDefaultVillian();
 		villain.picture = UPDATED_PICTURE;
-		villain.powers = UPDATED_POWERS;
+		villain.updatePowers(UPDATED_POWERS);
 
 		return villain;
 	}

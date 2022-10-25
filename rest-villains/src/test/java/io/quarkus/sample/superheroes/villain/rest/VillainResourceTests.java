@@ -1,12 +1,28 @@
 package io.quarkus.sample.superheroes.villain.rest;
 
-import static io.restassured.RestAssured.*;
-import static io.restassured.http.ContentType.*;
-import static javax.ws.rs.core.Response.Status.*;
-import static org.hamcrest.Matchers.*;
+import static io.restassured.RestAssured.delete;
+import static io.restassured.RestAssured.get;
+import static io.restassured.RestAssured.given;
+import static io.restassured.http.ContentType.JSON;
+import static io.restassured.http.ContentType.TEXT;
+import static javax.ws.rs.core.Response.Status.BAD_REQUEST;
+import static javax.ws.rs.core.Response.Status.CREATED;
+import static javax.ws.rs.core.Response.Status.NOT_FOUND;
+import static javax.ws.rs.core.Response.Status.NO_CONTENT;
+import static javax.ws.rs.core.Response.Status.OK;
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.blankOrNullString;
+import static org.hamcrest.Matchers.is;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.*;
 
 import java.util.List;
 import java.util.Optional;
@@ -19,10 +35,12 @@ import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatcher;
 
+import io.quarkus.sample.superheroes.villain.Power;
 import io.quarkus.sample.superheroes.villain.Villain;
 import io.quarkus.sample.superheroes.villain.service.VillainService;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectMock;
+import io.restassured.common.mapper.TypeRef;
 
 @QuarkusTest
 public class VillainResourceTests {
@@ -32,8 +50,8 @@ public class VillainResourceTests {
 	private static final String UPDATED_OTHER_NAME = DEFAULT_OTHER_NAME + " (updated)";
 	private static final String DEFAULT_PICTURE = "super_chocolatine.png";
 	private static final String UPDATED_PICTURE = "super_chocolatine_updated.png";
-	private static final String DEFAULT_POWERS = "does not eat pain au chocolat";
-	private static final String UPDATED_POWERS = DEFAULT_POWERS + " (updated)";
+	private static final Set<Power> DEFAULT_POWERS = Set.of(new Power("chocolat", "Base", 10, null, "does not eat pain au chocolat"));
+	private static final Set<Power> UPDATED_POWERS = Set.of(new Power("dark chocolat", "Base", 99, null, "does not eat pain au dark chocolat"));
 	private static final int DEFAULT_LEVEL = 42;
 	private static final int UPDATED_LEVEL = DEFAULT_LEVEL + 1;
 	private static final long DEFAULT_ID = 1;
@@ -81,19 +99,21 @@ public class VillainResourceTests {
 		when(this.villainService.findRandomVillain())
 			.thenReturn(Optional.of(createDefaultVillian()));
 
-		get("/api/villains/random")
-			.then()
+		Villain villain = get("/api/villains/random")
+				.then()
 				.statusCode(OK.getStatusCode())
 				.contentType(JSON)
-				.body(
-					"$", notNullValue(),
-					"id", is((int) DEFAULT_ID),
-					"name", is(DEFAULT_NAME),
-					"otherName", is(DEFAULT_OTHER_NAME),
-					"level", is(DEFAULT_LEVEL),
-					"picture", is(DEFAULT_PICTURE),
-					"powers", is(DEFAULT_POWERS)
-				);
+				.and()
+				.extract().body()
+				.as(new TypeRef<Villain>() {});
+				
+		assertThat(villain, notNullValue());
+		assertThat(villain.id, is(DEFAULT_ID));
+		assertThat(villain.name, is(DEFAULT_NAME));
+		assertThat(villain.otherName, is(DEFAULT_OTHER_NAME));
+		assertThat(villain.level, is(DEFAULT_LEVEL));
+		assertThat(villain.picture, is(DEFAULT_PICTURE));
+		assertThat(villain.getPowers(), equalTo(DEFAULT_POWERS));
 
 		verify(this.villainService).findRandomVillain();
 		verifyNoMoreInteractions(this.villainService);
@@ -105,7 +125,7 @@ public class VillainResourceTests {
 		villain.name = null;
 		villain.otherName = DEFAULT_OTHER_NAME;
 		villain.picture = DEFAULT_PICTURE;
-		villain.powers = DEFAULT_POWERS;
+		villain.addAllPowers(DEFAULT_POWERS);
 		villain.level = 0;
 
 		given()
@@ -153,7 +173,7 @@ public class VillainResourceTests {
 		villain.name = null;
 		villain.otherName = UPDATED_OTHER_NAME;
 		villain.picture = UPDATED_PICTURE;
-		villain.powers = UPDATED_PICTURE;
+		villain.addAllPowers(UPDATED_POWERS);
 		villain.level = 0;
 
 		given()
@@ -175,7 +195,7 @@ public class VillainResourceTests {
 				(v.name == null) &&
 				v.otherName.equals(UPDATED_OTHER_NAME) &&
 				v.picture.equals(UPDATED_PICTURE) &&
-				v.powers.equals(UPDATED_POWERS) &&
+				v.getPowers().containsAll(UPDATED_POWERS) &&
 				(v.level == 0);
 
 		when(this.villainService.partialUpdateVillain(argThat(villainMatcher)))
@@ -218,19 +238,22 @@ public class VillainResourceTests {
 		when(this.villainService.findAllVillains())
 			.thenReturn(List.of(createDefaultVillian()));
 
-		get("/api/villains")
+		List<Villain> villains = get("/api/villains")
 			.then()
 				.statusCode(OK.getStatusCode())
 				.contentType(JSON)
-				.body(
-					"$.size()", is(1),
-					"[0].id", is((int) DEFAULT_ID),
-					"[0].name", is(DEFAULT_NAME),
-					"[0].otherName", is(DEFAULT_OTHER_NAME),
-					"[0].level", is(DEFAULT_LEVEL),
-					"[0].picture", is(DEFAULT_PICTURE),
-					"[0].powers", is(DEFAULT_POWERS)
-				);
+				.and()
+				.extract().body()
+				.as(new TypeRef<List<Villain>>() {});
+
+		assertThat(villains.size(), is(1));
+		assertThat(villains.get(0), notNullValue());
+		assertThat(villains.get(0).id, is(DEFAULT_ID));
+		assertThat(villains.get(0).name, is(DEFAULT_NAME));
+		assertThat(villains.get(0).otherName, is(DEFAULT_OTHER_NAME));
+		assertThat(villains.get(0).level, is(DEFAULT_LEVEL));
+		assertThat(villains.get(0).picture, is(DEFAULT_PICTURE));
+		assertThat(villains.get(0).getPowers(), equalTo(DEFAULT_POWERS));
 
 		verify(this.villainService).findAllVillains();
 		verifyNoMoreInteractions(this.villainService);
@@ -255,22 +278,26 @@ public class VillainResourceTests {
     when(this.villainService.findAllVillainsHavingName(eq("name")))
       .thenReturn(List.of(createDefaultVillian()));
 
-    given()
-      .when()
-        .queryParam("name_filter", "name")
-        .get("/api/villains")
-      .then()
-        .statusCode(OK.getStatusCode())
-        .contentType(JSON)
-        .body(
-          "$.size()", is(1),
-          "[0].id", is((int) DEFAULT_ID),
-          "[0].name", is(DEFAULT_NAME),
-          "[0].otherName", is(DEFAULT_OTHER_NAME),
-          "[0].level", is(DEFAULT_LEVEL),
-          "[0].picture", is(DEFAULT_PICTURE),
-          "[0].powers", is(DEFAULT_POWERS)
-        );
+		List<Villain> villains = 
+			given()
+				.when()
+					.queryParam("name_filter", "name")
+				.get("/api/villains")
+				.then()
+					.statusCode(OK.getStatusCode())
+					.contentType(JSON)
+					.and()
+					.extract().body()
+					.as(new TypeRef<List<Villain>>() {});
+	
+		assertThat(villains.size(), is(1));
+		assertThat(villains.get(0), notNullValue());
+		assertThat(villains.get(0).id, is(DEFAULT_ID));
+		assertThat(villains.get(0).name, is(DEFAULT_NAME));
+		assertThat(villains.get(0).otherName, is(DEFAULT_OTHER_NAME));
+		assertThat(villains.get(0).level, is(DEFAULT_LEVEL));
+		assertThat(villains.get(0).picture, is(DEFAULT_PICTURE));
+		assertThat(villains.get(0).getPowers(), equalTo(DEFAULT_POWERS));
 
     verify(this.villainService).findAllVillainsHavingName(eq("name"));
     verifyNoMoreInteractions(this.villainService);
@@ -314,7 +341,7 @@ public class VillainResourceTests {
 			v.name.equals(DEFAULT_NAME) &&
 			v.otherName.equals(DEFAULT_OTHER_NAME) &&
 			v.picture.equals(DEFAULT_PICTURE) &&
-			v.powers.equals(DEFAULT_POWERS) &&
+			v.getPowers().containsAll(DEFAULT_POWERS) &&
 			(v.level == DEFAULT_LEVEL);
 
 		when(this.villainService.persistVillain(argThat(villainMatcher)))
@@ -324,7 +351,7 @@ public class VillainResourceTests {
 		villain.name = DEFAULT_NAME;
 		villain.otherName = DEFAULT_OTHER_NAME;
 		villain.picture = DEFAULT_PICTURE;
-		villain.powers = DEFAULT_POWERS;
+		villain.addAllPowers(DEFAULT_POWERS);
 		villain.level = DEFAULT_LEVEL;
 
 		given()
@@ -349,7 +376,7 @@ public class VillainResourceTests {
 				v.name.equals(UPDATED_NAME) &&
 				v.otherName.equals(UPDATED_OTHER_NAME) &&
 				v.picture.equals(UPDATED_PICTURE) &&
-				v.powers.equals(UPDATED_POWERS) &&
+				v.getPowers().containsAll(UPDATED_POWERS) &&
 				(v.level == UPDATED_LEVEL);
 
 		when(this.villainService.replaceVillain(argThat(villainMatcher)))
@@ -377,7 +404,7 @@ public class VillainResourceTests {
 				v.name.equals(UPDATED_NAME) &&
 				v.otherName.equals(UPDATED_OTHER_NAME) &&
 				v.picture.equals(UPDATED_PICTURE) &&
-				v.powers.equals(UPDATED_POWERS) &&
+				v.getPowers().containsAll(UPDATED_POWERS) &&
 				(v.level == UPDATED_LEVEL);
 
 		when(this.villainService.replaceVillain(argThat(villainMatcher)))
@@ -404,11 +431,11 @@ public class VillainResourceTests {
 				(v.name == null) &&
 				(v.otherName == null) &&
 				v.picture.equals(UPDATED_PICTURE) &&
-				v.powers.equals(UPDATED_POWERS) &&
+				v.getPowers().containsAll(UPDATED_POWERS) &&
 				(v.level == null);
 
 		var partialVillain = new Villain();
-		partialVillain.powers = UPDATED_POWERS;
+		partialVillain.addAllPowers(UPDATED_POWERS);
 		partialVillain.picture = UPDATED_PICTURE;
 
 		when(this.villainService.partialUpdateVillain(argThat(villainMatcher)))
@@ -435,34 +462,37 @@ public class VillainResourceTests {
 				(v.name == null) &&
 				(v.otherName == null) &&
 				v.picture.equals(UPDATED_PICTURE) &&
-				v.powers.equals(UPDATED_POWERS) &&
+				v.getPowers().containsAll(UPDATED_POWERS) &&
 				(v.level == null);
 
 		var partialVillain = new Villain();
-		partialVillain.powers = UPDATED_POWERS;
+		partialVillain.addAllPowers(UPDATED_POWERS);
 		partialVillain.picture = UPDATED_PICTURE;
 
 		when(this.villainService.partialUpdateVillain(argThat(villainMatcher)))
 			.thenReturn(Optional.of(createPartiallyUpdatedVillain()));
 
-		given()
-			.when()
-				.body(partialVillain)
-				.contentType(JSON)
-				.accept(JSON)
-				.patch("/api/villains/{id}", DEFAULT_ID)
-			.then()
-				.statusCode(OK.getStatusCode())
-				.contentType(JSON)
-				.body(
-					"$", notNullValue(),
-					"id", is((int) DEFAULT_ID),
-					"name", is(DEFAULT_NAME),
-					"otherName", is(DEFAULT_OTHER_NAME),
-					"level", is(DEFAULT_LEVEL),
-					"picture", is(UPDATED_PICTURE),
-					"powers", is(UPDATED_POWERS)
-				);
+		Villain villain = 
+			given()
+				.when()
+					.body(partialVillain)
+					.contentType(JSON)
+					.accept(JSON)
+					.patch("/api/villains/{id}", DEFAULT_ID)
+				.then()
+					.statusCode(OK.getStatusCode())
+					.contentType(JSON)
+				.and()
+				.extract().body()
+				.as(new TypeRef<Villain>() {});
+
+		assertThat(villain, notNullValue());
+		assertThat(villain.id, is(DEFAULT_ID));
+		assertThat(villain.name, is(DEFAULT_NAME));
+		assertThat(villain.otherName, is(DEFAULT_OTHER_NAME));
+		assertThat(villain.level, is(DEFAULT_LEVEL));
+		assertThat(villain.picture, is(UPDATED_PICTURE));
+		assertThat(villain.getPowers(), equalTo(UPDATED_POWERS));
 
 		verify(this.villainService).partialUpdateVillain(argThat(villainMatcher));
 		verifyNoMoreInteractions(this.villainService);
@@ -509,13 +539,13 @@ public class VillainResourceTests {
 			v.get(0).name.equals(DEFAULT_NAME) &&
 			v.get(0).otherName.equals(DEFAULT_OTHER_NAME) &&
 			v.get(0).picture.equals(DEFAULT_PICTURE) &&
-			v.get(0).powers.equals(DEFAULT_POWERS) &&
+			v.get(0).getPowers().equals(DEFAULT_POWERS) &&
 			(v.get(0).level == DEFAULT_LEVEL) &&
       (v.get(1).id == null) &&
 			v.get(1).name.equals(UPDATED_NAME) &&
 			v.get(1).otherName.equals(UPDATED_OTHER_NAME) &&
 			v.get(1).picture.equals(UPDATED_PICTURE) &&
-			v.get(1).powers.equals(UPDATED_POWERS) &&
+			v.get(1).getPowers().equals(UPDATED_POWERS) &&
 			(v.get(1).level == UPDATED_LEVEL);
 
     doNothing()
@@ -545,14 +575,14 @@ public class VillainResourceTests {
 			.then()
 				.statusCode(OK.getStatusCode());
 	}
-
+	
 	private static Villain createDefaultVillian() {
 		var villain = new Villain();
 		villain.id = DEFAULT_ID;
 		villain.name = DEFAULT_NAME;
 		villain.otherName = DEFAULT_OTHER_NAME;
 		villain.picture = DEFAULT_PICTURE;
-		villain.powers = DEFAULT_POWERS;
+		villain.addAllPowers(DEFAULT_POWERS);
 		villain.level = DEFAULT_LEVEL;
 
 		return villain;
@@ -563,7 +593,10 @@ public class VillainResourceTests {
 		villain.name = UPDATED_NAME;
 		villain.otherName = UPDATED_OTHER_NAME;
 		villain.picture = UPDATED_PICTURE;
-		villain.powers = UPDATED_POWERS;
+		DEFAULT_POWERS.forEach(p -> {
+			villain.removePower(p);
+		});
+		villain.addAllPowers(UPDATED_POWERS);
 		villain.level = UPDATED_LEVEL;
 
 		return villain;
@@ -572,7 +605,10 @@ public class VillainResourceTests {
 	public static Villain createPartiallyUpdatedVillain() {
 		var villain = createDefaultVillian();
 		villain.picture = UPDATED_PICTURE;
-		villain.powers = UPDATED_POWERS;
+		DEFAULT_POWERS.forEach(p -> {
+			villain.removePower(p);
+		});
+		villain.addAllPowers(UPDATED_POWERS);
 
 		return villain;
 	}

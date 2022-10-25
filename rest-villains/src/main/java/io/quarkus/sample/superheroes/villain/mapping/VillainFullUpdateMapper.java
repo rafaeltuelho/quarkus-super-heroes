@@ -9,7 +9,7 @@ import io.quarkus.sample.superheroes.villain.Villain;
 /**
  * Mapper to map all fields on an input {@link Villain} onto a target {@link Villain}.
  */
-@Mapper(componentModel = "cdi")
+@Mapper(componentModel = "cdi", uses = { PowerUpdateMapper.class } )
 public interface VillainFullUpdateMapper {
 	/**
 	 * Maps all fields except <code>id</code> from {@code input} onto {@code target}.

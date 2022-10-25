@@ -1,23 +1,41 @@
 package io.quarkus.sample.superheroes.villain;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Random;
+import java.util.Set;
 
-import javax.persistence.Column;
+import javax.persistence.CascadeType;
 import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.JoinTable;
+import javax.persistence.ManyToMany;
+import javax.persistence.SequenceGenerator;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Positive;
 import javax.validation.constraints.Size;
 
-import io.quarkus.hibernate.orm.panache.PanacheEntity;
+import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 
 /**
  * JPA entity class for a Villain. Re-used in the API layer.
  */
 @Entity
-public class Villain extends PanacheEntity {
+public class Villain extends PanacheEntityBase {
+  @Id
+  @SequenceGenerator(
+          name = "villainSequence",
+          sequenceName = "villain_id_seq",
+          allocationSize = 1,
+          initialValue = 1)
+  @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "villainSequence")
+  public Long id;
+		
 	@NotNull
 	@Size(min = 3, max = 50)
 	public String name;
@@ -30,8 +48,38 @@ public class Villain extends PanacheEntity {
 
 	public String picture;
 
-	@Column(columnDefinition = "TEXT")
-	public String powers;
+	@ManyToMany(cascade = {
+		CascadeType.PERSIST,
+		CascadeType.MERGE
+	})
+	@JoinTable(name = "villain_power",
+    joinColumns = @JoinColumn(name = "villain_id"),
+    inverseJoinColumns = @JoinColumn(name = "power_id")
+	)
+	private Set<Power> powers = new HashSet<>();
+
+	public void addPower(Power power) {
+		powers.add(power);
+		power.getVillains().add(this);
+	}
+
+	public void removePower(Power power) {
+			powers.remove(power);
+			power.getVillains().remove(this);
+	}
+
+	private void removeAllPowers() {
+		powers.forEach(this::removePower);
+	}
+
+	public void updatePowers(Set<Power> powers) {
+		this.removeAllPowers();
+		powers.forEach(this::addPower);
+	}
+
+	public void addAllPowers(Set<Power> powers) {
+		powers.forEach(this::addPower);
+	}
 
 	public static Optional<Villain> findRandom() {
 		var countVillains = count();
@@ -74,11 +122,20 @@ public class Villain extends PanacheEntity {
 			return false;
 		}
 		Villain villain = (Villain) o;
-		return this.id.equals(villain.id);
+		return id != null && this.id.equals(villain.id);
 	}
 
 	@Override
 	public int hashCode() {
 		return Objects.hash(this.id);
 	}
+
+	/**
+	 * Returns an immutable Set of Powers associated to this Villain
+	 * @return {@code Collections.unmodifiableSet(Set<Power>)}
+	 */
+  public Set<Power> getPowers() {
+    return powers;
+    // return Collections.unmodifiableSet(powers);
+  }
 }

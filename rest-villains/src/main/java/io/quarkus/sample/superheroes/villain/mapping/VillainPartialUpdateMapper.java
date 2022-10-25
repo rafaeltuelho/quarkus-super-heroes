@@ -10,7 +10,7 @@ import io.quarkus.sample.superheroes.villain.Villain;
 /**
  * Mapper to map <code><strong>non-null</strong></code> fields on an input {@link Villain} onto a target {@link Villain}.
  */
-@Mapper(componentModel = "cdi", nullValuePropertyMappingStrategy = IGNORE)
+@Mapper(componentModel = "cdi", nullValuePropertyMappingStrategy = IGNORE, uses = { PowerUpdateMapper.class } )
 public interface VillainPartialUpdateMapper {
 	/**
 	 * Maps all <code><strong>non-null</strong></code> fields from {@code input} onto {@code target}.
@@ -18,4 +18,5 @@ public interface VillainPartialUpdateMapper {
 	 * @param target The target {@link Villain}
 	 */
 	void mapPartialUpdate(Villain input, @MappingTarget Villain target);
+
 }

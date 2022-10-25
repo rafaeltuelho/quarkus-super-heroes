@@ -1,9 +1,12 @@
 package io.quarkus.sample.superheroes.villain.service;
 
-import static javax.transaction.Transactional.TxType.*;
+import static javax.transaction.Transactional.TxType.REQUIRED;
+import static javax.transaction.Transactional.TxType.SUPPORTS;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -13,14 +16,14 @@ import javax.validation.Valid;
 import javax.validation.Validator;
 import javax.validation.constraints.NotNull;
 
+import io.opentelemetry.instrumentation.annotations.SpanAttribute;
+import io.opentelemetry.instrumentation.annotations.WithSpan;
 import io.quarkus.logging.Log;
+import io.quarkus.sample.superheroes.villain.Power;
 import io.quarkus.sample.superheroes.villain.Villain;
 import io.quarkus.sample.superheroes.villain.config.VillainConfig;
 import io.quarkus.sample.superheroes.villain.mapping.VillainFullUpdateMapper;
 import io.quarkus.sample.superheroes.villain.mapping.VillainPartialUpdateMapper;
-
-import io.opentelemetry.instrumentation.annotations.SpanAttribute;
-import io.opentelemetry.instrumentation.annotations.WithSpan;
 
 /**
  * Service class containing business methods for the application.
@@ -74,6 +77,7 @@ public class VillainService {
 	public Villain persistVillain(@SpanAttribute("arg.villain") @NotNull @Valid Villain villain) {
     Log.debugf("Persisting villain: %s", villain);
 		villain.level = (int) Math.round(villain.level * this.villainConfig.level().multiplier());
+		villain.updatePowers(filteredSetOfPowers(villain));
 		Villain.persist(villain);
 
 		return villain;
@@ -96,6 +100,7 @@ public class VillainService {
 		return Villain.findByIdOptional(villain.id)
 			.map(Villain.class::cast) // Only here for type erasure within the IDE
 			.map(v -> {
+				villain.updatePowers(filteredSetOfPowers(villain));
 				this.villainPartialUpdateMapper.mapPartialUpdate(villain, v);
 				return v;
 			})
@@ -106,6 +111,11 @@ public class VillainService {
   public void replaceAllVillains(@SpanAttribute("arg.villains") List<Villain> villains) {
     Log.debug("Replacing all villains");
     deleteAllVillains();
+
+		villains.forEach((v) -> {
+			v.updatePowers(filteredSetOfPowers(v));
+		});
+
     Villain.persist(villains);
   }
 
@@ -139,4 +149,26 @@ public class VillainService {
     Log.debugf("Deleting villain by id = %d", id);
 		Villain.deleteById(id);
 	}
+
+	/**
+	 * Check if any power associated with {@code Villain} already exist in the DB to avoid duplication issues
+	 * @param villain
+	 * @return {@code Set<Power>} A new Set of Power containing both managed and detached Power instances
+	 */
+	private Set<Power> filteredSetOfPowers(Villain villain) {
+		Log.debugf("check if any power already exist in the DB to avoid duplication issues: %s", villain.getPowers());
+		Set<Power> newPowers = new HashSet<>();
+		villain.getPowers().forEach(p -> {
+			Power.findByName(p.name).ifPresentOrElse((persistedPower) -> {
+				Log.debugf("Power [%s] already exist in the Database. It will be just associated with the Villain.", persistedPower.name);
+				newPowers.add(persistedPower); // replace by the already persisted power. Thus it will be just updated?!
+			}, 
+			() -> {
+				Log.debugf("Power [%s] doesn't exist yet. It will be persisted and the associated with this Villain.", p.name);
+				newPowers.add(p); // add as a new Power
+			});
+		});
+		return newPowers;
+	}
+
 }

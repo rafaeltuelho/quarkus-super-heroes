@@ -15,8 +15,9 @@
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
     <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
-    <quarkus.platform.version>2.13.0.Final</quarkus.platform.version>
+    <quarkus.platform.version>2.13.2.Final</quarkus.platform.version>
     <surefire-plugin.version>3.0.0-M7</surefire-plugin.version>
+    <quarkus-hibernate-types.version>0.2.0</quarkus-hibernate-types.version>
   </properties>
   <dependencyManagement>
     <dependencies>
@@ -99,6 +100,11 @@
       <groupId>io.opentelemetry.instrumentation</groupId>
       <artifactId>opentelemetry-jdbc</artifactId>
     </dependency>
+    <dependency>
+      <groupId>io.quarkiverse.hibernatetypes</groupId>
+      <artifactId>quarkus-hibernate-types</artifactId>
+      <version>${quarkus-hibernate-types.version}</version>
+    </dependency>    
     <dependency>
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-junit5</artifactId>
