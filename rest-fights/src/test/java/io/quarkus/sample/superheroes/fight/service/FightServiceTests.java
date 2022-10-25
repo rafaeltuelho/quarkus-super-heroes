@@ -1,12 +1,24 @@
 package io.quarkus.sample.superheroes.fight.service;
 
-import static org.assertj.core.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.catchThrowableOfType;
+import static org.assertj.core.api.Assertions.tuple;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 import javax.enterprise.inject.Any;
 import javax.inject.Inject;
@@ -25,6 +37,7 @@ import io.quarkus.sample.superheroes.fight.Fight;
 import io.quarkus.sample.superheroes.fight.Fighters;
 import io.quarkus.sample.superheroes.fight.client.Hero;
 import io.quarkus.sample.superheroes.fight.client.HeroClient;
+import io.quarkus.sample.superheroes.fight.client.Power;
 import io.quarkus.sample.superheroes.fight.client.Villain;
 import io.quarkus.sample.superheroes.fight.client.VillainClient;
 import io.quarkus.sample.superheroes.fight.config.FightConfig;
@@ -32,7 +45,6 @@ import io.quarkus.sample.superheroes.fight.mapping.FightMapper;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectMock;
 import io.quarkus.test.junit.mockito.InjectSpy;
-
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.helpers.test.UniAssertSubscriber;
 import io.smallrye.reactive.messaging.providers.connectors.InMemoryConnector;
@@ -58,7 +70,8 @@ class FightServiceTests {
 
 	private static final String DEFAULT_VILLAIN_NAME = "Super Chocolatine";
 	private static final String DEFAULT_VILLAIN_PICTURE = "super_chocolatine.png";
-	private static final String DEFAULT_VILLAIN_POWERS = "does not eat pain au chocolat";
+	private static final Set<Power> DEFAULT_VILLAIN_POWERS = Set.of(new Power("chocoloat", "Base", 10, "chocolat.png", "does not eat pain au chocolat"));
+	private static final Set<Power> FALLBACK_VILLAIN_POWERS = Set.of(new Power("Fallback villain Super Power", "Base", 10, "fallback.png", "fallback..."));
 	private static final int DEFAULT_VILLAIN_LEVEL = 42;
 	private static final String VILLAINS_TEAM_NAME = "villains";
 
@@ -913,7 +926,7 @@ class FightServiceTests {
 			this.fightConfig.villain().fallback().name(),
 			this.fightConfig.villain().fallback().level(),
 			this.fightConfig.villain().fallback().picture(),
-			this.fightConfig.villain().fallback().powers()
+			FALLBACK_VILLAIN_POWERS
 		);
 	}
 

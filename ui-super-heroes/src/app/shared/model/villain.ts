@@ -10,6 +10,8 @@
  * Do not edit the class manually.
  */
 
+import { Power } from "./power";
+
 /**
  * The villain fighting against the hero
  */
@@ -17,8 +19,8 @@ export class Villain {
   constructor(
     public name?: string,
     public picture?: string,
-    public powers?: string,
-    public level?: bigint
+    public powers?: Array<Power>,
+    public level?: bigint,
   ) {
   }
 }

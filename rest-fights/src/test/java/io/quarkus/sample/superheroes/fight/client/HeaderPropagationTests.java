@@ -1,16 +1,27 @@
 package io.quarkus.sample.superheroes.fight.client;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.containing;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
-import static com.github.tomakehurst.wiremock.client.WireMock.*;
+import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.okForContentType;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static io.restassured.RestAssured.given;
-import static io.restassured.http.ContentType.*;
+import static io.restassured.http.ContentType.JSON;
+import static io.restassured.http.ContentType.TEXT;
 import static javax.ws.rs.core.HttpHeaders.ACCEPT;
-import static javax.ws.rs.core.MediaType.*;
+import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
+import static javax.ws.rs.core.MediaType.TEXT_PLAIN;
 import static javax.ws.rs.core.Response.Status.OK;
-import static org.hamcrest.Matchers.*;
-import static org.junit.jupiter.params.ParameterizedTest.*;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.params.ParameterizedTest.ARGUMENTS_WITH_NAMES_PLACEHOLDER;
+import static org.junit.jupiter.params.ParameterizedTest.DISPLAY_NAME_PLACEHOLDER;
+import static org.junit.jupiter.params.ParameterizedTest.INDEX_PLACEHOLDER;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
+import java.util.Set;
 import java.util.stream.Stream;
 
 import javax.inject.Inject;
@@ -21,15 +32,16 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import io.quarkus.sample.superheroes.fight.HeroesVillainsWiremockServerResource;
-import io.quarkus.sample.superheroes.fight.InjectWireMock;
-import io.quarkus.test.common.QuarkusTestResource;
-import io.quarkus.test.junit.QuarkusTest;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
+
+import io.quarkus.sample.superheroes.fight.Fighters;
+import io.quarkus.sample.superheroes.fight.HeroesVillainsWiremockServerResource;
+import io.quarkus.sample.superheroes.fight.InjectWireMock;
+import io.quarkus.test.common.QuarkusTestResource;
+import io.quarkus.test.junit.QuarkusTest;
 
 @QuarkusTest
 @QuarkusTestResource(HeroesVillainsWiremockServerResource.class)
@@ -60,7 +72,7 @@ public class HeaderPropagationTests {
   private static final String VILLAIN_API_HELLO_URI = VILLAIN_API_BASE_URI + "/hello";
   private static final String DEFAULT_VILLAIN_NAME = "Super Chocolatine";
   private static final String DEFAULT_VILLAIN_PICTURE = "super_chocolatine.png";
-  private static final String DEFAULT_VILLAIN_POWERS = "does not eat pain au chocolat";
+	private static final Set<Power> DEFAULT_VILLAIN_POWERS = Set.of(new Power("chocoloat", "Base", 10, "chocolat.png", "does not eat pain au chocolat"));
   private static final int DEFAULT_VILLAIN_LEVEL = 40;
   private static final Villain DEFAULT_VILLAIN = new Villain(
     DEFAULT_VILLAIN_NAME,
@@ -93,27 +105,29 @@ public class HeaderPropagationTests {
         .willReturn(okForContentType(APPLICATION_JSON, getDefaultVillainJson()))
     );
 
-    given()
-      .header(PROPAGATE_HEADER_NAME, PROPAGATE_HEADER_VALUE)
-      .header(NO_PROPAGATE_HEADER_NAME, NO_PROPAGATE_HEADER_VALUE)
-      .when()
-        .get("/api/fights/randomfighters")
-      .then()
-        .statusCode(OK.getStatusCode())
-        .contentType(JSON)
-        .body(
-          "$", notNullValue(),
-          "hero", notNullValue(),
-          "hero.name", is(DEFAULT_HERO.getName()),
-          "hero.level", is(DEFAULT_HERO.getLevel()),
-          "hero.picture", is(DEFAULT_HERO.getPicture()),
-          "hero.powers", is(DEFAULT_HERO.getPowers()),
-          "villain", notNullValue(),
-          "villain.name", is(DEFAULT_VILLAIN.getName()),
-          "villain.level", is(DEFAULT_VILLAIN.getLevel()),
-          "villain.picture", is(DEFAULT_VILLAIN.getPicture()),
-          "villain.powers", is(DEFAULT_VILLAIN.getPowers())
-        );
+    Fighters randomFighter = 
+      given()
+        .header(PROPAGATE_HEADER_NAME, PROPAGATE_HEADER_VALUE)
+        .header(NO_PROPAGATE_HEADER_NAME, NO_PROPAGATE_HEADER_VALUE)
+        .when()
+          .get("/api/fights/randomfighters")
+        .then()
+          .statusCode(OK.getStatusCode())
+          .contentType(JSON)
+          .and()
+          .extract().as(Fighters.class);
+  
+      assertThat(randomFighter, notNullValue());
+      assertThat(randomFighter.getHero(), notNullValue());
+      assertThat(randomFighter.getHero().getName(), is(DEFAULT_HERO_NAME));
+      assertThat(randomFighter.getHero().getLevel(), is(DEFAULT_HERO_LEVEL));
+      assertThat(randomFighter.getHero().getPicture(), is(DEFAULT_HERO_PICTURE));
+      assertThat(randomFighter.getHero().getPowers(), is(DEFAULT_HERO_POWERS));
+      assertThat(randomFighter.getVillain(), notNullValue());
+      assertThat(randomFighter.getVillain().getName(), is(DEFAULT_VILLAIN_NAME));
+      assertThat(randomFighter.getVillain().getLevel(), is(DEFAULT_VILLAIN_LEVEL));
+      assertThat(randomFighter.getVillain().getPicture(), is(DEFAULT_VILLAIN_PICTURE));
+      assertThat(randomFighter.getVillain().getPowers(), equalTo(DEFAULT_VILLAIN_POWERS));
 
     this.wireMockServer.verify(1,
       getRequestedFor(urlEqualTo(HERO_API_URI))

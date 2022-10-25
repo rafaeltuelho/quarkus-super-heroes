@@ -1,5 +1,8 @@
 package io.quarkus.sample.superheroes.fight.client;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 
@@ -19,9 +22,9 @@ public class Villain {
 	@NotEmpty
 	private String picture;
 
-	private String powers;
+	private Set<Power> powers = new HashSet<>();
 
-	public Villain(String name, int level, String picture, String powers) {
+	public Villain(String name, int level, String picture, Set<Power> powers) {
 		this.name = name;
 		this.level = level;
 		this.picture = picture;
@@ -55,11 +58,11 @@ public class Villain {
 		this.picture = picture;
 	}
 
-	public String getPowers() {
+	public Set<Power> getPowers() {
 		return this.powers;
 	}
 
-	public void setPowers(String powers) {
+	public void setPowers(Set<Power> powers) {
 		this.powers = powers;
 	}
 

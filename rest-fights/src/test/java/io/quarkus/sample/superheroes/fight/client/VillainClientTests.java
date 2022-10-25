@@ -1,11 +1,20 @@
 package io.quarkus.sample.superheroes.fight.client;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.*;
+import static com.github.tomakehurst.wiremock.client.WireMock.containing;
+import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.notFound;
+import static com.github.tomakehurst.wiremock.client.WireMock.okForContentType;
+import static com.github.tomakehurst.wiremock.client.WireMock.serverError;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static javax.ws.rs.core.HttpHeaders.ACCEPT;
-import static javax.ws.rs.core.MediaType.*;
+import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
+import static javax.ws.rs.core.MediaType.TEXT_PLAIN;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.Duration;
+import java.util.Set;
 import java.util.stream.IntStream;
 
 import javax.inject.Inject;
@@ -16,14 +25,14 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.tomakehurst.wiremock.WireMockServer;
+
 import io.quarkus.sample.superheroes.fight.HeroesVillainsWiremockServerResource;
 import io.quarkus.sample.superheroes.fight.InjectWireMock;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.tomakehurst.wiremock.WireMockServer;
 import io.smallrye.faulttolerance.api.CircuitBreakerMaintenance;
 import io.smallrye.faulttolerance.api.CircuitBreakerState;
 import io.smallrye.mutiny.helpers.test.UniAssertSubscriber;
@@ -40,7 +49,7 @@ class VillainClientTests {
   private static final String VILLAIN_HELLO_URI = VILLAIN_API_BASE_URI + "/hello";
   private static final String DEFAULT_VILLAIN_NAME = "Super Chocolatine";
   private static final String DEFAULT_VILLAIN_PICTURE = "super_chocolatine.png";
-  private static final String DEFAULT_VILLAIN_POWERS = "does not eat pain au chocolat";
+	private static final Set<Power> DEFAULT_VILLAIN_POWERS = Set.of(new Power("chocoloat", "Base", 10, "chocolat.png", "does not eat pain au chocolat"));
   private static final int DEFAULT_VILLAIN_LEVEL = 42;
 
   private static final Villain DEFAULT_VILLAIN = new Villain(

@@ -3,6 +3,7 @@ export * from './fightFightDate';
 export * from './fighters';
 export * from './hero';
 export * from './villain';
+export * from './power';
 export * from './modelLong';
 export * from './modelString';
 export * from './uRI';

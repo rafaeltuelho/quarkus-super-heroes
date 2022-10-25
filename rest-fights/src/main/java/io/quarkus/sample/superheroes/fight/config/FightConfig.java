@@ -34,6 +34,30 @@ public interface FightConfig {
 		long delayMillis();
 	}
 
+	interface Power {
+		/**
+		 * Power name
+		 */
+		String name();
+		/**
+		 * Power tier
+		 */
+		String tier();
+		/**
+		 * Power score
+		 */
+		@WithDefault("0")
+		int score();
+		/**
+		 * Power aliases
+		 */
+		String aliases();
+		/**
+		 * Power description
+		 */
+		String description();
+	}
+
 	interface Hero {
 		/**
 		 * Hero team name
@@ -129,7 +153,7 @@ public interface FightConfig {
 			/**
 			 * Villain fallback powers
 			 */
-			String powers();
+			// Set<Power> powers();
 		}
 	}
 }

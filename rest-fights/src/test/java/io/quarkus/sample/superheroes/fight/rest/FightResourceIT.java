@@ -1,20 +1,35 @@
 package io.quarkus.sample.superheroes.fight.rest;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.containing;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
-import static com.github.tomakehurst.wiremock.client.WireMock.*;
+import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.notFound;
+import static com.github.tomakehurst.wiremock.client.WireMock.okForContentType;
+import static com.github.tomakehurst.wiremock.client.WireMock.serverError;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static io.restassured.RestAssured.get;
-import static io.restassured.RestAssured.*;
-import static io.restassured.http.ContentType.*;
+import static io.restassured.RestAssured.given;
+import static io.restassured.http.ContentType.JSON;
+import static io.restassured.http.ContentType.TEXT;
 import static javax.ws.rs.core.HttpHeaders.ACCEPT;
-import static javax.ws.rs.core.MediaType.*;
-import static javax.ws.rs.core.Response.Status.*;
+import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
+import static javax.ws.rs.core.MediaType.TEXT_PLAIN;
+import static javax.ws.rs.core.Response.Status.BAD_REQUEST;
+import static javax.ws.rs.core.Response.Status.NOT_FOUND;
+import static javax.ws.rs.core.Response.Status.OK;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.hamcrest.Matchers.*;
-import static org.junit.jupiter.params.ParameterizedTest.*;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.jupiter.params.ParameterizedTest.ARGUMENTS_WITH_NAMES_PLACEHOLDER;
+import static org.junit.jupiter.params.ParameterizedTest.DISPLAY_NAME_PLACEHOLDER;
+import static org.junit.jupiter.params.ParameterizedTest.INDEX_PLACEHOLDER;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -22,8 +37,8 @@ import java.util.stream.Stream;
 import org.apache.kafka.clients.consumer.OffsetResetStrategy;
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serdes;
-import org.junit.jupiter.api.AfterAll;
 import org.bson.types.ObjectId;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
@@ -33,34 +48,30 @@ import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import io.apicurio.registry.rest.client.RegistryClientFactory;
-import io.apicurio.registry.serde.avro.AvroKafkaDeserializer;
-import io.apicurio.registry.serde.avro.AvroKafkaSerdeConfig;
-import io.apicurio.registry.serde.avro.AvroKafkaSerializer;
-
-import io.apicurio.registry.serde.avro.ReflectAvroDatumProvider;
-import io.apicurio.rest.client.VertxHttpClientProvider;
-
-import io.quarkus.logging.Log;
-import io.quarkus.sample.superheroes.fight.Fight;
-import io.quarkus.sample.superheroes.fight.Fighters;
-import io.quarkus.sample.superheroes.fight.HeroesVillainsWiremockServerResource;
-import io.quarkus.sample.superheroes.fight.InjectWireMock;
-import io.quarkus.sample.superheroes.fight.client.Hero;
-import io.quarkus.sample.superheroes.fight.client.Villain;
-import io.quarkus.test.common.QuarkusTestResource;
-import io.quarkus.test.junit.QuarkusIntegrationTest;
-
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
 
+import io.apicurio.registry.rest.client.RegistryClientFactory;
+import io.apicurio.registry.serde.avro.AvroKafkaDeserializer;
+import io.apicurio.registry.serde.avro.AvroKafkaSerdeConfig;
+import io.apicurio.registry.serde.avro.AvroKafkaSerializer;
+import io.apicurio.registry.serde.avro.ReflectAvroDatumProvider;
+import io.apicurio.rest.client.VertxHttpClientProvider;
+import io.quarkus.logging.Log;
+import io.quarkus.sample.superheroes.fight.Fight;
+import io.quarkus.sample.superheroes.fight.Fighters;
+import io.quarkus.sample.superheroes.fight.HeroesVillainsWiremockServerResource;
+import io.quarkus.sample.superheroes.fight.InjectWireMock;
+import io.quarkus.sample.superheroes.fight.client.Hero;
+import io.quarkus.sample.superheroes.fight.client.Power;
+import io.quarkus.sample.superheroes.fight.client.Villain;
+import io.quarkus.test.common.QuarkusTestResource;
+import io.quarkus.test.junit.QuarkusIntegrationTest;
 import io.quarkus.test.kafka.InjectKafkaCompanion;
-
 import io.quarkus.test.kafka.KafkaCompanionResource;
-
 import io.smallrye.reactive.messaging.kafka.companion.KafkaCompanion;
 import io.vertx.core.Vertx;
 
@@ -103,7 +114,7 @@ public class FightResourceIT {
 	private static final String VILLAINS_TEAM_NAME = "villains";
 	private static final String DEFAULT_VILLAIN_NAME = "Super Chocolatine";
 	private static final String DEFAULT_VILLAIN_PICTURE = "super_chocolatine.png";
-	private static final String DEFAULT_VILLAIN_POWERS = "does not eat pain au chocolat";
+	private static final Set<Power> DEFAULT_VILLAIN_POWERS = Set.of(new Power("chocoloat", "Base", 10, "chocolat.png", "does not eat pain au chocolat"));
 	private static final int DEFAULT_VILLAIN_LEVEL = 40;
 
 	private static final String FALLBACK_HERO_NAME = "Fallback hero";
@@ -127,7 +138,7 @@ public class FightResourceIT {
 
 	private static final String FALLBACK_VILLAIN_NAME = "Fallback villain";
 	private static final String FALLBACK_VILLAIN_PICTURE = "https://dummyimage.com/280x380/b22222/ffffff&text=Fallback+Villain";
-	private static final String FALLBACK_VILLAIN_POWERS = "Fallback villain powers";
+	private static final Set<Power> FALLBACK_VILLAIN_POWERS = Set.of(new Power("Fallback villain Super Power", "Base", 10, "fallback.png", "fallback..."));
 	private static final int FALLBACK_VILLAIN_LEVEL = 45;
 
 	private static final Villain FALLBACK_VILLAIN = new Villain(
@@ -206,23 +217,25 @@ public class FightResourceIT {
 				.willReturn(okForContentType(APPLICATION_JSON, getDefaultVillainJson()))
 		);
 
-		get("/api/fights/randomfighters")
-			.then()
-			.statusCode(OK.getStatusCode())
-			.contentType(JSON)
-			.body(
-				"$", notNullValue(),
-				"hero", notNullValue(),
-				"hero.name", is(FALLBACK_HERO.getName()),
-				"hero.level", is(FALLBACK_HERO.getLevel()),
-				"hero.picture", is(FALLBACK_HERO.getPicture()),
-				"hero.powers", is(FALLBACK_HERO.getPowers()),
-				"villain", notNullValue(),
-				"villain.name", is(DEFAULT_VILLAIN.getName()),
-				"villain.level", is(DEFAULT_VILLAIN.getLevel()),
-				"villain.picture", is(DEFAULT_VILLAIN.getPicture()),
-				"villain.powers", is(DEFAULT_VILLAIN.getPowers())
-			);
+		Fighters randomFighter = 
+			get("/api/fights/randomfighters")
+				.then()
+				.statusCode(OK.getStatusCode())
+				.contentType(JSON)
+				.and()
+				.extract().as(Fighters.class);
+
+		assertThat(randomFighter, notNullValue());
+		assertThat(randomFighter.getHero(), notNullValue());
+		assertThat(randomFighter.getHero().getName(), is(FALLBACK_HERO_NAME));
+		assertThat(randomFighter.getHero().getLevel(), is(FALLBACK_HERO_LEVEL));
+		assertThat(randomFighter.getHero().getPicture(), is(FALLBACK_HERO_PICTURE));
+		assertThat(randomFighter.getHero().getPowers(), is(FALLBACK_HERO_POWERS));
+		assertThat(randomFighter.getVillain(), notNullValue());
+		assertThat(randomFighter.getVillain().getName(), is(DEFAULT_VILLAIN_NAME));
+		assertThat(randomFighter.getVillain().getLevel(), is(DEFAULT_VILLAIN_LEVEL));
+		assertThat(randomFighter.getVillain().getPicture(), is(DEFAULT_VILLAIN_PICTURE));
+		assertThat(randomFighter.getVillain().getPowers(), equalTo(DEFAULT_VILLAIN_POWERS));
 
 		this.wireMockServer.verify(4,
 			getRequestedFor(urlEqualTo(HERO_API_URI))
@@ -250,23 +263,25 @@ public class FightResourceIT {
 				.willReturn(serverError())
 		);
 
-		get("/api/fights/randomfighters")
-			.then()
-			.statusCode(OK.getStatusCode())
-			.contentType(JSON)
-			.body(
-				"$", notNullValue(),
-				"hero", notNullValue(),
-				"hero.name", is(DEFAULT_HERO.getName()),
-				"hero.level", is(DEFAULT_HERO.getLevel()),
-				"hero.picture", is(DEFAULT_HERO.getPicture()),
-				"hero.powers", is(DEFAULT_HERO.getPowers()),
-				"villain", notNullValue(),
-				"villain.name", is(FALLBACK_VILLAIN.getName()),
-				"villain.level", is(FALLBACK_VILLAIN.getLevel()),
-				"villain.picture", is(FALLBACK_VILLAIN.getPicture()),
-				"villain.powers", is(FALLBACK_VILLAIN.getPowers())
-			);
+		Fighters randomFighter = 
+			get("/api/fights/randomfighters")
+				.then()
+				.statusCode(OK.getStatusCode())
+				.contentType(JSON)
+				.and()
+				.extract().as(Fighters.class);
+
+		assertThat(randomFighter, notNullValue());
+		assertThat(randomFighter.getHero(), notNullValue());
+		assertThat(randomFighter.getHero().getName(), is(DEFAULT_HERO_NAME));
+		assertThat(randomFighter.getHero().getLevel(), is(DEFAULT_HERO_LEVEL));
+		assertThat(randomFighter.getHero().getPicture(), is(DEFAULT_HERO_PICTURE));
+		assertThat(randomFighter.getHero().getPowers(), is(DEFAULT_HERO_POWERS));
+		assertThat(randomFighter.getVillain(), notNullValue());
+		assertThat(randomFighter.getVillain().getName(), is(FALLBACK_VILLAIN_NAME));
+		assertThat(randomFighter.getVillain().getLevel(), is(FALLBACK_VILLAIN_LEVEL));
+		assertThat(randomFighter.getVillain().getPicture(), is(FALLBACK_VILLAIN_PICTURE));
+		assertThat(randomFighter.getVillain().getPowers(), equalTo(FALLBACK_VILLAIN_POWERS));
 
 		this.wireMockServer.verify(1,
 			getRequestedFor(urlEqualTo(HERO_API_URI))
@@ -292,23 +307,25 @@ public class FightResourceIT {
 				.willReturn(okForContentType(APPLICATION_JSON, getDefaultVillainJson()))
 		);
 
-		get("/api/fights/randomfighters")
-			.then()
-			.statusCode(OK.getStatusCode())
-			.contentType(JSON)
-			.body(
-				"$", notNullValue(),
-				"hero", notNullValue(),
-				"hero.name", is(FALLBACK_HERO.getName()),
-				"hero.level", is(FALLBACK_HERO.getLevel()),
-				"hero.picture", is(FALLBACK_HERO.getPicture()),
-				"hero.powers", is(FALLBACK_HERO.getPowers()),
-				"villain", notNullValue(),
-				"villain.name", is(DEFAULT_VILLAIN.getName()),
-				"villain.level", is(DEFAULT_VILLAIN.getLevel()),
-				"villain.picture", is(DEFAULT_VILLAIN.getPicture()),
-				"villain.powers", is(DEFAULT_VILLAIN.getPowers())
-			);
+		Fighters randomFighter = 
+			get("/api/fights/randomfighters")
+				.then()
+				.statusCode(OK.getStatusCode())
+				.contentType(JSON)
+				.and()
+				.extract().as(Fighters.class);
+
+		assertThat(randomFighter, notNullValue());
+		assertThat(randomFighter.getHero(), notNullValue());
+		assertThat(randomFighter.getHero().getName(), is(FALLBACK_HERO_NAME));
+		assertThat(randomFighter.getHero().getLevel(), is(FALLBACK_HERO_LEVEL));
+		assertThat(randomFighter.getHero().getPicture(), is(FALLBACK_HERO_PICTURE));
+		assertThat(randomFighter.getHero().getPowers(), is(FALLBACK_HERO_POWERS));
+		assertThat(randomFighter.getVillain(), notNullValue());
+		assertThat(randomFighter.getVillain().getName(), is(DEFAULT_VILLAIN_NAME));
+		assertThat(randomFighter.getVillain().getLevel(), is(DEFAULT_VILLAIN_LEVEL));
+		assertThat(randomFighter.getVillain().getPicture(), is(DEFAULT_VILLAIN_PICTURE));
+		assertThat(randomFighter.getVillain().getPowers(), equalTo(DEFAULT_VILLAIN_POWERS));
 
 		this.wireMockServer.verify(1,
 			getRequestedFor(urlEqualTo(HERO_API_URI))
@@ -336,23 +353,25 @@ public class FightResourceIT {
 				.willReturn(notFound())
 		);
 
-		get("/api/fights/randomfighters")
-			.then()
-			.statusCode(OK.getStatusCode())
-			.contentType(JSON)
-			.body(
-				"$", notNullValue(),
-				"hero", notNullValue(),
-				"hero.name", is(DEFAULT_HERO.getName()),
-				"hero.level", is(DEFAULT_HERO.getLevel()),
-				"hero.picture", is(DEFAULT_HERO.getPicture()),
-				"hero.powers", is(DEFAULT_HERO.getPowers()),
-				"villain", notNullValue(),
-				"villain.name", is(FALLBACK_VILLAIN.getName()),
-				"villain.level", is(FALLBACK_VILLAIN.getLevel()),
-				"villain.picture", is(FALLBACK_VILLAIN.getPicture()),
-				"villain.powers", is(FALLBACK_VILLAIN.getPowers())
-			);
+		Fighters randomFighter = 
+			get("/api/fights/randomfighters")
+				.then()
+				.statusCode(OK.getStatusCode())
+				.contentType(JSON)
+				.and()
+				.extract().as(Fighters.class);
+
+		assertThat(randomFighter, notNullValue());
+		assertThat(randomFighter.getHero(), notNullValue());
+		assertThat(randomFighter.getHero().getName(), is(DEFAULT_HERO_NAME));
+		assertThat(randomFighter.getHero().getLevel(), is(DEFAULT_HERO_LEVEL));
+		assertThat(randomFighter.getHero().getPicture(), is(DEFAULT_HERO_PICTURE));
+		assertThat(randomFighter.getHero().getPowers(), is(DEFAULT_HERO_POWERS));
+		assertThat(randomFighter.getVillain(), notNullValue());
+		assertThat(randomFighter.getVillain().getName(), is(FALLBACK_VILLAIN_NAME));
+		assertThat(randomFighter.getVillain().getLevel(), is(FALLBACK_VILLAIN_LEVEL));
+		assertThat(randomFighter.getVillain().getPicture(), is(FALLBACK_VILLAIN_PICTURE));
+		assertThat(randomFighter.getVillain().getPowers(), equalTo(FALLBACK_VILLAIN_POWERS));
 
 		this.wireMockServer.verify(1,
 			getRequestedFor(urlEqualTo(HERO_API_URI))
@@ -380,23 +399,25 @@ public class FightResourceIT {
 				.willReturn(notFound())
 		);
 
-		get("/api/fights/randomfighters")
-			.then()
-			.statusCode(OK.getStatusCode())
-			.contentType(JSON)
-			.body(
-				"$", notNullValue(),
-				"hero", notNullValue(),
-				"hero.name", is(FALLBACK_HERO.getName()),
-				"hero.level", is(FALLBACK_HERO.getLevel()),
-				"hero.picture", is(FALLBACK_HERO.getPicture()),
-				"hero.powers", is(FALLBACK_HERO.getPowers()),
-				"villain", notNullValue(),
-				"villain.name", is(FALLBACK_VILLAIN.getName()),
-				"villain.level", is(FALLBACK_VILLAIN.getLevel()),
-				"villain.picture", is(FALLBACK_VILLAIN.getPicture()),
-				"villain.powers", is(FALLBACK_VILLAIN.getPowers())
-			);
+		Fighters randomFighter = 
+			get("/api/fights/randomfighters")
+				.then()
+				.statusCode(OK.getStatusCode())
+				.contentType(JSON)
+				.and()
+				.extract().as(Fighters.class);
+
+		assertThat(randomFighter, notNullValue());
+		assertThat(randomFighter.getHero(), notNullValue());
+		assertThat(randomFighter.getHero().getName(), is(FALLBACK_HERO_NAME));
+		assertThat(randomFighter.getHero().getLevel(), is(FALLBACK_HERO_LEVEL));
+		assertThat(randomFighter.getHero().getPicture(), is(FALLBACK_HERO_PICTURE));
+		assertThat(randomFighter.getHero().getPowers(), is(FALLBACK_HERO_POWERS));
+		assertThat(randomFighter.getVillain(), notNullValue());
+		assertThat(randomFighter.getVillain().getName(), is(FALLBACK_VILLAIN_NAME));
+		assertThat(randomFighter.getVillain().getLevel(), is(FALLBACK_VILLAIN_LEVEL));
+		assertThat(randomFighter.getVillain().getPicture(), is(FALLBACK_VILLAIN_PICTURE));
+		assertThat(randomFighter.getVillain().getPowers(), equalTo(FALLBACK_VILLAIN_POWERS));
 
 		this.wireMockServer.verify(1,
 			getRequestedFor(urlEqualTo(HERO_API_URI))
@@ -424,23 +445,25 @@ public class FightResourceIT {
 				.willReturn(serverError())
 		);
 
-		get("/api/fights/randomfighters")
-			.then()
-			.statusCode(OK.getStatusCode())
-			.contentType(JSON)
-			.body(
-				"$", notNullValue(),
-				"hero", notNullValue(),
-				"hero.name", is(FALLBACK_HERO.getName()),
-				"hero.level", is(FALLBACK_HERO.getLevel()),
-				"hero.picture", is(FALLBACK_HERO.getPicture()),
-				"hero.powers", is(FALLBACK_HERO.getPowers()),
-				"villain", notNullValue(),
-				"villain.name", is(FALLBACK_VILLAIN.getName()),
-				"villain.level", is(FALLBACK_VILLAIN.getLevel()),
-				"villain.picture", is(FALLBACK_VILLAIN.getPicture()),
-				"villain.powers", is(FALLBACK_VILLAIN.getPowers())
-			);
+		Fighters randomFighter = 
+			get("/api/fights/randomfighters")
+				.then()
+				.statusCode(OK.getStatusCode())
+				.contentType(JSON)
+				.and()
+				.extract().as(Fighters.class);
+
+		assertThat(randomFighter, notNullValue());
+		assertThat(randomFighter.getHero(), notNullValue());
+		assertThat(randomFighter.getHero().getName(), is(FALLBACK_HERO_NAME));
+		assertThat(randomFighter.getHero().getLevel(), is(FALLBACK_HERO_LEVEL));
+		assertThat(randomFighter.getHero().getPicture(), is(FALLBACK_HERO_PICTURE));
+		assertThat(randomFighter.getHero().getPowers(), is(FALLBACK_HERO_POWERS));
+		assertThat(randomFighter.getVillain(), notNullValue());
+		assertThat(randomFighter.getVillain().getName(), is(FALLBACK_VILLAIN_NAME));
+		assertThat(randomFighter.getVillain().getLevel(), is(FALLBACK_VILLAIN_LEVEL));
+		assertThat(randomFighter.getVillain().getPicture(), is(FALLBACK_VILLAIN_PICTURE));
+		assertThat(randomFighter.getVillain().getPowers(), equalTo(FALLBACK_VILLAIN_POWERS));
 
 		this.wireMockServer.verify(4,
 			getRequestedFor(urlEqualTo(HERO_API_URI))
@@ -467,24 +490,25 @@ public class FightResourceIT {
 			WireMock.get(urlEqualTo(VILLAIN_API_URI))
 				.willReturn(okForContentType(APPLICATION_JSON, getDefaultVillainJson()))
 		);
+		Fighters randomFighter = 
+			get("/api/fights/randomfighters")
+				.then()
+				.statusCode(OK.getStatusCode())
+				.contentType(JSON)
+				.and()
+				.extract().as(Fighters.class);
 
-		get("/api/fights/randomfighters")
-			.then()
-			.statusCode(OK.getStatusCode())
-			.contentType(JSON)
-			.body(
-				"$", notNullValue(),
-				"hero", notNullValue(),
-				"hero.name", is(DEFAULT_HERO.getName()),
-				"hero.level", is(DEFAULT_HERO.getLevel()),
-				"hero.picture", is(DEFAULT_HERO.getPicture()),
-				"hero.powers", is(DEFAULT_HERO.getPowers()),
-				"villain", notNullValue(),
-				"villain.name", is(DEFAULT_VILLAIN.getName()),
-				"villain.level", is(DEFAULT_VILLAIN.getLevel()),
-				"villain.picture", is(DEFAULT_VILLAIN.getPicture()),
-				"villain.powers", is(DEFAULT_VILLAIN.getPowers())
-			);
+		assertThat(randomFighter, notNullValue());
+		assertThat(randomFighter.getHero(), notNullValue());
+		assertThat(randomFighter.getHero().getName(), is(DEFAULT_HERO_NAME));
+		assertThat(randomFighter.getHero().getLevel(), is(DEFAULT_HERO_LEVEL));
+		assertThat(randomFighter.getHero().getPicture(), is(DEFAULT_HERO_PICTURE));
+		assertThat(randomFighter.getHero().getPowers(), is(DEFAULT_HERO_POWERS));
+		assertThat(randomFighter.getVillain(), notNullValue());
+		assertThat(randomFighter.getVillain().getName(), is(DEFAULT_VILLAIN_NAME));
+		assertThat(randomFighter.getVillain().getLevel(), is(DEFAULT_VILLAIN_LEVEL));
+		assertThat(randomFighter.getVillain().getPicture(), is(DEFAULT_VILLAIN_PICTURE));
+		assertThat(randomFighter.getVillain().getPowers(), equalTo(DEFAULT_VILLAIN_POWERS));
 
 		this.wireMockServer.verify(1,
 			getRequestedFor(urlEqualTo(HERO_API_URI))
@@ -881,24 +905,27 @@ public class FightResourceIT {
 
 		// The circuit breaker requestVolumeThreshold == 8, so we need to make n+1 successful requests for it to clear
 		IntStream.rangeClosed(0, 8)
-			.forEach(i ->
-				get("/api/fights/randomfighters")
-					.then()
-					.statusCode(OK.getStatusCode())
-					.contentType(JSON)
-					.body(
-						"$", notNullValue(),
-						"hero", notNullValue(),
-						"hero.name", is(DEFAULT_HERO.getName()),
-						"hero.level", is(DEFAULT_HERO.getLevel()),
-						"hero.picture", is(DEFAULT_HERO.getPicture()),
-						"hero.powers", is(DEFAULT_HERO.getPowers()),
-						"villain", notNullValue(),
-						"villain.name", is(DEFAULT_VILLAIN.getName()),
-						"villain.level", is(DEFAULT_VILLAIN.getLevel()),
-						"villain.picture", is(DEFAULT_VILLAIN.getPicture()),
-						"villain.powers", is(DEFAULT_VILLAIN.getPowers())
-					)
+			.forEach(i -> {
+					Fighters randomFighter = 
+						get("/api/fights/randomfighters")
+							.then()
+							.statusCode(OK.getStatusCode())
+							.contentType(JSON)
+							.and()
+							.extract().as(Fighters.class);
+	
+					assertThat(randomFighter, notNullValue());
+					assertThat(randomFighter.getHero(), notNullValue());
+					assertThat(randomFighter.getHero().getName(), is(DEFAULT_HERO_NAME));
+					assertThat(randomFighter.getHero().getLevel(), is(DEFAULT_HERO_LEVEL));
+					assertThat(randomFighter.getHero().getPicture(), is(DEFAULT_HERO_PICTURE));
+					assertThat(randomFighter.getHero().getPowers(), is(DEFAULT_HERO_POWERS));
+					assertThat(randomFighter.getVillain(), notNullValue());
+					assertThat(randomFighter.getVillain().getName(), is(DEFAULT_VILLAIN_NAME));
+					assertThat(randomFighter.getVillain().getLevel(), is(DEFAULT_VILLAIN_LEVEL));
+					assertThat(randomFighter.getVillain().getPicture(), is(DEFAULT_VILLAIN_PICTURE));
+					assertThat(randomFighter.getVillain().getPowers(), equalTo(DEFAULT_VILLAIN_POWERS));
+				}
 			);
 
 		// Verify successful requests

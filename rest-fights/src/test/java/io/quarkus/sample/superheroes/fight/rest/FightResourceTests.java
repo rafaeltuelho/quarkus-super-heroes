@@ -1,16 +1,30 @@
 package io.quarkus.sample.superheroes.fight.rest;
 
-import static io.restassured.RestAssured.*;
-import static io.restassured.http.ContentType.*;
-import static javax.ws.rs.core.Response.Status.*;
-import static org.hamcrest.Matchers.*;
-import static org.junit.jupiter.params.ParameterizedTest.*;
+import static io.restassured.RestAssured.get;
+import static io.restassured.RestAssured.given;
+import static io.restassured.http.ContentType.JSON;
+import static io.restassured.http.ContentType.TEXT;
+import static javax.ws.rs.core.Response.Status.BAD_REQUEST;
+import static javax.ws.rs.core.Response.Status.NOT_FOUND;
+import static javax.ws.rs.core.Response.Status.OK;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.params.ParameterizedTest.ARGUMENTS_WITH_NAMES_PLACEHOLDER;
+import static org.junit.jupiter.params.ParameterizedTest.DISPLAY_NAME_PLACEHOLDER;
+import static org.junit.jupiter.params.ParameterizedTest.INDEX_PLACEHOLDER;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.*;
 
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import org.bson.types.ObjectId;
@@ -22,11 +36,11 @@ import org.mockito.ArgumentMatcher;
 import io.quarkus.sample.superheroes.fight.Fight;
 import io.quarkus.sample.superheroes.fight.Fighters;
 import io.quarkus.sample.superheroes.fight.client.Hero;
+import io.quarkus.sample.superheroes.fight.client.Power;
 import io.quarkus.sample.superheroes.fight.client.Villain;
 import io.quarkus.sample.superheroes.fight.service.FightService;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectMock;
-
 import io.smallrye.mutiny.Uni;
 
 /**
@@ -45,7 +59,7 @@ public class FightResourceTests {
 
 	private static final String DEFAULT_VILLAIN_NAME = "Super Chocolatine";
 	private static final String DEFAULT_VILLAIN_PICTURE = "super_chocolatine.png";
-	private static final String DEFAULT_VILLAIN_POWERS = "does not eat pain au chocolat";
+	private static final Set<Power> DEFAULT_VILLAIN_POWERS = Set.of(new Power("chocoloat", "Base", 10, "chocolat.png", "does not eat pain au chocolat"));
 	private static final int DEFAULT_VILLAIN_LEVEL = 40;
 	private static final String VILLAINS_TEAM_NAME = "villains";
 
@@ -98,23 +112,24 @@ public class FightResourceTests {
 		when(this.fightService.findRandomFighters())
 			.thenReturn(Uni.createFrom().item(createDefaultFighters()));
 
-		get("/api/fights/randomfighters")
+		Fighters randomFighter = get("/api/fights/randomfighters")
 			.then()
 			.statusCode(OK.getStatusCode())
 			.contentType(JSON)
-			.body(
-				"$", notNullValue(),
-				"hero", notNullValue(),
-				"hero.name", is(DEFAULT_HERO_NAME),
-				"hero.level", is(DEFAULT_HERO_LEVEL),
-				"hero.picture", is(DEFAULT_HERO_PICTURE),
-				"hero.powers", is(DEFAULT_HERO_POWERS),
-				"villain", notNullValue(),
-				"villain.name", is(DEFAULT_VILLAIN_NAME),
-				"villain.level", is(DEFAULT_VILLAIN_LEVEL),
-				"villain.picture", is(DEFAULT_VILLAIN_PICTURE),
-				"villain.powers", is(DEFAULT_VILLAIN_POWERS)
-			);
+			.and()
+			.extract().as(Fighters.class);
+
+		assertThat(randomFighter, notNullValue());
+		assertThat(randomFighter.getHero(), notNullValue());
+		assertThat(randomFighter.getHero().getName(), is(DEFAULT_HERO_NAME));
+		assertThat(randomFighter.getHero().getLevel(), is(DEFAULT_HERO_LEVEL));
+		assertThat(randomFighter.getHero().getPicture(), is(DEFAULT_HERO_PICTURE));
+		assertThat(randomFighter.getHero().getPowers(), equalTo(DEFAULT_HERO_POWERS));
+		assertThat(randomFighter.getVillain(), notNullValue());
+		assertThat(randomFighter.getVillain().getName(), is(DEFAULT_VILLAIN_NAME));
+		assertThat(randomFighter.getVillain().getLevel(), is(DEFAULT_VILLAIN_LEVEL));
+		assertThat(randomFighter.getVillain().getPicture(), is(DEFAULT_VILLAIN_PICTURE));
+		assertThat(randomFighter.getVillain().getPowers(), equalTo(DEFAULT_VILLAIN_POWERS));
 
 		verify(this.fightService).findRandomFighters();
 		verifyNoMoreInteractions(this.fightService);
