@@ -55,11 +55,19 @@
                     <a data-toggle="collapse" href="#villainPowers" role="button" aria-expanded="false" aria-controls="villainPowers">
                         <i class="powers villain fas fa-atom"></i>
                     </a>
-                    {{figthers.villain.powers.split(',').length}}
+                    {{figthers.villain.powers.length}}
                 </h2>
 
                 <div class="collapse" id="villainPowers">
-                    {{figthers.villain.powers}}
+                    <button 
+                        *ngFor="let power of figthers.villain.powers; index as i;"
+                        type="button" class="btn btn-primary position-relative">
+                        {{power.name}}
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                            {{power.score}}
+                        
+                        </span>
+                    </button>
                 </div>
 
             </div>
@@ -71,7 +79,7 @@
         <!-- {{power}} -->
     </div>
 
-    <div *ngFor="let power of figthers.villain.powers.split(','); index as i;"
+    <div *ngFor="let power of figthers.villain.powers; index as i;"
         [className]="fighting ? 'shooting_star_villain' : 'off'" >
         <!-- {{power}} -->
     </div>
