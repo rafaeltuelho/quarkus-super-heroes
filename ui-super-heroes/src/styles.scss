@@ -115,11 +115,12 @@ $shooting-time: 2000ms;
       // right: calc(35% - #{random(300) + 0px}); // Villain
       bottom: calc(70% - #{random(100) - 50px});
       animation-delay: $delay;
-      // opacity: random(50) / 100 + 0.5;
+      opacity: random(50) / 100 + 0.5;
       
       &::before,
       &::after {
         animation-delay: $delay;
+        // opacity: 100;
       }
     }
   }
@@ -177,11 +178,12 @@ $shooting-time: 2000ms;
       right: calc(80% - #{random(200) + 0px}); // Villain
       bottom: calc(70% - #{random(100) - 50px});
       animation-delay: $delay;
-      // opacity: random(50) / 100 + 0.5;
+      opacity: random(50) / 100 + 0.5;
       
       &::before,
       &::after {
         animation-delay: $delay;
+        // opacity: 100%;
       }
     }
   }
@@ -222,6 +224,7 @@ $shooting-time: 2000ms;
 
   100% {
     transform: translateX(800px);
+    opacity: 100%;
   }
 }
 
@@ -236,5 +239,6 @@ $shooting-time: 2000ms;
 
   100% {
     transform: translateX(-760px); //rotate(25deg) //Right -> Left (Villain -> Hero)
+    opacity: 100%;
   }
 }

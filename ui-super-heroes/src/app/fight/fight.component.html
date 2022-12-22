@@ -8,6 +8,7 @@
             <div class="card-pf-body">
                 <div *ngFor="let power of figthers.hero.powers.split(','); index as i;"
                     [className]="fighting ? 'shooting_star' : 'off'" >
+                    <p [className]="fighting ? 'visible fw-lighter' : 'visually-hidden'"><small style="font-size: .4rem; word-wrap: normal;">{{power}}</small></p>
                 </div>                
                 <div class="fixed-avatar" 
                     [className]="fighting ? 'floating-avatar' : 'fixed-avatar'"
@@ -28,7 +29,16 @@
                 </h2>
 
                 <div class="collapse" id="heroPowers">
-                    {{figthers.hero.powers}}
+                    <button 
+                    *ngFor="let power of figthers.hero.powers.split(','); index as i;"
+                    type="button" 
+                    class="btn btn-outline-secondary position-relative"
+                    style="--bs-btn-padding-y: .25rem; --bs-btn-padding-x: .5rem; --bs-btn-font-size: .75rem; --bs-btn-border-width: 0">
+                    {{power}}
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                        {{i}}
+                    </span>
+                </button>                    
                 </div>
             </div>
         </div>
@@ -41,7 +51,7 @@
                 <button (click)="newFighters()" class="btn btn-primary btn-block btn-lg"><h4><i class="fas fa-random"></i> NEW FIGHTERS</h4></button>
                 <button (click)="fight()" class="btn btn-danger btn-block btn-lg"><h4><i class="fab fa-battle-net"></i> FIGHT !</h4></button>
             </div>
-
+            <div><demo-notify></demo-notify></div>
             <div *ngIf="winner" class="winner-text">Winner is <span [className]="winner == figthers.villain.name ? 'winner-villain' : 'winner-hero'">{{winner}}</span></div>
         </div>
     </div>

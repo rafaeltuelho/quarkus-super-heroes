@@ -12,12 +12,17 @@ import { MatTableModule } from '@angular/material/table';
 import { FightService } from './shared';
 import { HttpClientModule } from '@angular/common/http';
 import { MatGridListModule } from '@angular/material/grid-list';
+import { AppComponentTimer } from './timer/app-component-timer';
+import { CountdownModule } from 'ngx-countdown';
+import { NotifyComponent } from './countdown/countdown.component';
 
 @NgModule({
   declarations: [
     AppComponent,
     FightListComponent,
-    FightComponent
+    FightComponent,
+    AppComponentTimer,
+    NotifyComponent
   ],
   imports: [
     BrowserModule,
@@ -27,7 +32,8 @@ import { MatGridListModule } from '@angular/material/grid-list';
     MatCardModule,
     MatButtonModule,
     MatGridListModule,
-    MatTableModule
+    MatTableModule,
+    CountdownModule,
   ],
   providers: [FightService],
   bootstrap: [AppComponent]
