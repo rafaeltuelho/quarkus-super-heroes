@@ -1,12 +1,26 @@
 package io.quarkus.sample.superheroes.hero.rest;
 
-import static io.restassured.RestAssured.*;
+import static io.restassured.RestAssured.delete;
+import static io.restassured.RestAssured.get;
+import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
-import static javax.ws.rs.core.Response.Status.*;
-import static org.hamcrest.Matchers.*;
-import static org.mockito.ArgumentMatchers.*;
+import static javax.ws.rs.core.Response.Status.BAD_REQUEST;
+import static javax.ws.rs.core.Response.Status.CREATED;
+import static javax.ws.rs.core.Response.Status.NOT_FOUND;
+import static javax.ws.rs.core.Response.Status.NO_CONTENT;
+import static javax.ws.rs.core.Response.Status.OK;
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.blankOrNullString;
+import static org.hamcrest.Matchers.is;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.*;
 
 import java.util.List;
 import java.util.Set;
@@ -19,10 +33,11 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatcher;
 
 import io.quarkus.sample.superheroes.hero.Hero;
+import io.quarkus.sample.superheroes.hero.Power;
 import io.quarkus.sample.superheroes.hero.service.HeroService;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectMock;
-
+import io.restassured.common.mapper.TypeRef;
 import io.smallrye.mutiny.Uni;
 
 @QuarkusTest
@@ -33,8 +48,10 @@ public class HeroResourceTests {
 	private static final String UPDATED_OTHER_NAME = DEFAULT_OTHER_NAME + " (updated)";
 	private static final String DEFAULT_PICTURE = "super_chocolatine.png";
 	private static final String UPDATED_PICTURE = "super_chocolatine_updated.png";
-	private static final String DEFAULT_POWERS = "does not eat pain au chocolat";
-	private static final String UPDATED_POWERS = DEFAULT_POWERS + " (updated)";
+	// private static final String DEFAULT_POWERS = "does not eat pain au chocolat";
+	// private static final String UPDATED_POWERS = DEFAULT_POWERS + " (updated)";
+	private static final Set<Power> DEFAULT_POWERS = Set.of(new Power("chocolat", "Base", 10, "", "does not eat pain au chocolat"));
+	private static final Set<Power> UPDATED_POWERS = Set.of(new Power("dark chocolat", "Base", 99, "", "does not eat pain au dark chocolat"));
 	private static final int DEFAULT_LEVEL = 42;
 	private static final int UPDATED_LEVEL = DEFAULT_LEVEL + 1;
 	private static final long DEFAULT_ID = 1;
@@ -83,19 +100,21 @@ public class HeroResourceTests {
 		when(this.heroService.findRandomHero())
 			.thenReturn(Uni.createFrom().item(createDefaultHero()));
 
-		get("/api/heroes/random")
+		Hero hero = get("/api/heroes/random")
 			.then()
 				.statusCode(OK.getStatusCode())
 				.contentType(JSON)
-				.body(
-					"$", notNullValue(),
-					"id", is((int) DEFAULT_ID),
-					"name", is(DEFAULT_NAME),
-					"otherName", is(DEFAULT_OTHER_NAME),
-					"level", is(DEFAULT_LEVEL),
-					"picture", is(DEFAULT_PICTURE),
-					"powers", is(DEFAULT_POWERS)
-				);
+				.and()
+				.extract().body()
+				.as(new TypeRef<Hero>() {});
+				
+		assertThat(hero, notNullValue());
+		assertThat(hero.getId(), is(DEFAULT_ID));
+		assertThat(hero.getName(), is(DEFAULT_NAME));
+		assertThat(hero.getOtherName(), is(DEFAULT_OTHER_NAME));
+		assertThat(hero.getLevel(), is(DEFAULT_LEVEL));
+		assertThat(hero.getPicture(), is(DEFAULT_PICTURE));
+		assertThat(hero.getPowers(), equalTo(DEFAULT_POWERS));
 
 		verify(this.heroService).findRandomHero();
 		verifyNoMoreInteractions(this.heroService);
@@ -107,7 +126,7 @@ public class HeroResourceTests {
 		hero.setName(null);
 		hero.setOtherName(DEFAULT_OTHER_NAME);
 		hero.setPicture(DEFAULT_PICTURE);
-		hero.setPowers(DEFAULT_POWERS);
+		hero.addAllPowers(DEFAULT_POWERS);
 		hero.setLevel(0);
 
 		given()
@@ -155,7 +174,7 @@ public class HeroResourceTests {
 		hero.setName(null);
 		hero.setOtherName(UPDATED_OTHER_NAME);
 		hero.setPicture(UPDATED_PICTURE);
-		hero.setPowers(UPDATED_PICTURE);
+		hero.updatePowers(UPDATED_POWERS);
 		hero.setLevel(0);
 
 		given()
@@ -220,19 +239,22 @@ public class HeroResourceTests {
 		when(this.heroService.findAllHeroes())
 			.thenReturn(Uni.createFrom().item(List.of(createDefaultHero())));
 
-		get("/api/heroes")
+		List<Hero> heroes = get("/api/heroes")
 			.then()
 				.statusCode(OK.getStatusCode())
 				.contentType(JSON)
-				.body(
-					"$.size()", is(1),
-					"[0].id", is((int) DEFAULT_ID),
-					"[0].name", is(DEFAULT_NAME),
-					"[0].otherName", is(DEFAULT_OTHER_NAME),
-					"[0].level", is(DEFAULT_LEVEL),
-					"[0].picture", is(DEFAULT_PICTURE),
-					"[0].powers", is(DEFAULT_POWERS)
-				);
+				.and()
+				.extract().body()
+				.as(new TypeRef<List<Hero>>() {});
+
+		assertThat(heroes.size(), is(1));
+		assertThat(heroes.get(0), notNullValue());
+		assertThat(heroes.get(0).getId(), is(DEFAULT_ID));
+		assertThat(heroes.get(0).getName(), is(DEFAULT_NAME));
+		assertThat(heroes.get(0).getOtherName(), is(DEFAULT_OTHER_NAME));
+		assertThat(heroes.get(0).getLevel(), is(DEFAULT_LEVEL));
+		assertThat(heroes.get(0).getPicture(), is(DEFAULT_PICTURE));
+		assertThat(heroes.get(0).getPowers(), equalTo(DEFAULT_POWERS));
 
 		verify(this.heroService).findAllHeroes();
 		verifyNoMoreInteractions(this.heroService);
@@ -257,22 +279,25 @@ public class HeroResourceTests {
     when(this.heroService.findAllHeroesHavingName(eq("name")))
       .thenReturn(Uni.createFrom().item(List.of(createDefaultHero())));
 
-    given()
+    List<Hero> heroes = given()
       .when()
         .queryParam("name_filter", "name")
         .get("/api/heroes")
       .then()
         .statusCode(OK.getStatusCode())
         .contentType(JSON)
-        .body(
-          "$.size()", is(1),
-          "[0].id", is((int) DEFAULT_ID),
-          "[0].name", is(DEFAULT_NAME),
-          "[0].otherName", is(DEFAULT_OTHER_NAME),
-          "[0].level", is(DEFAULT_LEVEL),
-          "[0].picture", is(DEFAULT_PICTURE),
-          "[0].powers", is(DEFAULT_POWERS)
-        );
+				.and()
+				.extract().body()
+				.as(new TypeRef<List<Hero>>() {});
+
+		assertThat(heroes.size(), is(1));
+		assertThat(heroes.get(0), notNullValue());
+		assertThat(heroes.get(0).getId(), is(DEFAULT_ID));
+		assertThat(heroes.get(0).getName(), is(DEFAULT_NAME));
+		assertThat(heroes.get(0).getOtherName(), is(DEFAULT_OTHER_NAME));
+		assertThat(heroes.get(0).getLevel(), is(DEFAULT_LEVEL));
+		assertThat(heroes.get(0).getPicture(), is(DEFAULT_PICTURE));
+		assertThat(heroes.get(0).getPowers(), equalTo(DEFAULT_POWERS));
 
     verify(this.heroService).findAllHeroesHavingName(eq("name"));
     verifyNoMoreInteractions(this.heroService);
@@ -326,7 +351,7 @@ public class HeroResourceTests {
 		hero.setName(DEFAULT_NAME);
 		hero.setOtherName(DEFAULT_OTHER_NAME);
 		hero.setPicture(DEFAULT_PICTURE);
-		hero.setPowers(DEFAULT_POWERS);
+		hero.addAllPowers(DEFAULT_POWERS);
 		hero.setLevel(DEFAULT_LEVEL);
 
 		given()
@@ -410,7 +435,7 @@ public class HeroResourceTests {
 				(h.getLevel() == null);
 
 		var partialHero = new Hero();
-		partialHero.setPowers(UPDATED_POWERS);
+		partialHero.updatePowers(UPDATED_POWERS);
 		partialHero.setPicture(UPDATED_PICTURE);
 
 		when(this.heroService.partialUpdateHero(argThat(heroMatcher)))
@@ -441,13 +466,13 @@ public class HeroResourceTests {
 				(h.getLevel() == null);
 
 		var partialHero = new Hero();
-		partialHero.setPowers(UPDATED_POWERS);
+		partialHero.updatePowers(UPDATED_POWERS);
 		partialHero.setPicture(UPDATED_PICTURE);
 
 		when(this.heroService.partialUpdateHero(argThat(heroMatcher)))
 			.thenReturn(Uni.createFrom().item(createPartiallyUpdatedHero()));
 
-		given()
+		Hero hero = given()
 			.when()
 				.body(partialHero)
 				.contentType(JSON)
@@ -456,15 +481,17 @@ public class HeroResourceTests {
 			.then()
 				.statusCode(OK.getStatusCode())
 				.contentType(JSON)
-				.body(
-					"$", notNullValue(),
-					"id", is((int) DEFAULT_ID),
-					"name", is(DEFAULT_NAME),
-					"otherName", is(DEFAULT_OTHER_NAME),
-					"level", is(DEFAULT_LEVEL),
-					"picture", is(UPDATED_PICTURE),
-					"powers", is(UPDATED_POWERS)
-				);
+				.and()
+				.extract().body()
+				.as(new TypeRef<Hero>() {});
+				
+		assertThat(hero, notNullValue());
+		assertThat(hero.getId(), is(DEFAULT_ID));
+		assertThat(hero.getName(), is(DEFAULT_NAME));
+		assertThat(hero.getOtherName(), is(DEFAULT_OTHER_NAME));
+		assertThat(hero.getLevel(), is(DEFAULT_LEVEL));
+		assertThat(hero.getPicture(), is(DEFAULT_PICTURE));
+		assertThat(hero.getPowers(), equalTo(DEFAULT_POWERS));
 
 		verify(this.heroService).partialUpdateHero(argThat(heroMatcher));
 		verifyNoMoreInteractions(this.heroService);
@@ -545,7 +572,7 @@ public class HeroResourceTests {
 		hero.setName(DEFAULT_NAME);
 		hero.setOtherName(DEFAULT_OTHER_NAME);
 		hero.setPicture(DEFAULT_PICTURE);
-		hero.setPowers(DEFAULT_POWERS);
+		hero.addAllPowers(DEFAULT_POWERS);
 		hero.setLevel(DEFAULT_LEVEL);
 
 		return hero;
@@ -556,7 +583,7 @@ public class HeroResourceTests {
 		hero.setName(UPDATED_NAME);
 		hero.setOtherName(UPDATED_OTHER_NAME);
 		hero.setPicture(UPDATED_PICTURE);
-		hero.setPowers(UPDATED_POWERS);
+		hero.addAllPowers(UPDATED_POWERS);
 		hero.setLevel(UPDATED_LEVEL);
 
 		return hero;
@@ -565,7 +592,7 @@ public class HeroResourceTests {
 	public static Hero createPartiallyUpdatedHero() {
 		var hero = createDefaultHero();
 		hero.setPicture(UPDATED_PICTURE);
-		hero.setPowers(UPDATED_POWERS);
+		hero.updatePowers(UPDATED_POWERS);
 
 		return hero;
 	}

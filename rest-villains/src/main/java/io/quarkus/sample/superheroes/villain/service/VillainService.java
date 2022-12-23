@@ -160,7 +160,7 @@ public class VillainService {
 		Set<Power> newPowers = new HashSet<>();
 		villain.getPowers().forEach(p -> {
 			Power.findByName(p.name).ifPresentOrElse((persistedPower) -> {
-				Log.debugf("Power [%s] already exist in the Database. It will be just associated with the Villain.", persistedPower.name);
+				Log.debugf("Power [%s] already exist in the Database. It will be just associated with this Villain.", persistedPower.name);
 				newPowers.add(persistedPower); // replace by the already persisted power. Thus it will be just updated?!
 			}, 
 			() -> {

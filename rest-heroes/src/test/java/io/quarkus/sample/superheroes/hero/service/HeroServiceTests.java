@@ -1,11 +1,22 @@
 package io.quarkus.sample.superheroes.hero.service;
 
-import static org.assertj.core.api.Assertions.*;
-import static org.junit.jupiter.params.ParameterizedTest.*;
-import static org.mockito.Mockito.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
+import static org.junit.jupiter.params.ParameterizedTest.ARGUMENTS_WITH_NAMES_PLACEHOLDER;
+import static org.junit.jupiter.params.ParameterizedTest.DISPLAY_NAME_PLACEHOLDER;
+import static org.junit.jupiter.params.ParameterizedTest.INDEX_PLACEHOLDER;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyIterable;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Set;
 
 import javax.inject.Inject;
 import javax.validation.ConstraintViolation;
@@ -17,13 +28,14 @@ import org.junit.jupiter.params.provider.NullSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import io.quarkus.sample.superheroes.hero.Hero;
+import io.quarkus.sample.superheroes.hero.Power;
 import io.quarkus.sample.superheroes.hero.mapping.HeroFullUpdateMapper;
 import io.quarkus.sample.superheroes.hero.mapping.HeroPartialUpdateMapper;
 import io.quarkus.sample.superheroes.hero.repository.HeroRepository;
+import io.quarkus.sample.superheroes.hero.repository.PowerRepository;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectMock;
 import io.quarkus.test.junit.mockito.InjectSpy;
-
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.helpers.test.UniAssertSubscriber;
 
@@ -35,8 +47,10 @@ class HeroServiceTests {
 	private static final String UPDATED_OTHER_NAME = DEFAULT_OTHER_NAME + " (updated)";
 	private static final String DEFAULT_PICTURE = "super_chocolatine.png";
 	private static final String UPDATED_PICTURE = "super_chocolatine_updated.png";
-	private static final String DEFAULT_POWERS = "does not eat pain au chocolat";
-	private static final String UPDATED_POWERS = DEFAULT_POWERS + " (updated)";
+	// private static final String DEFAULT_POWERS = "does not eat pain au chocolat";
+	// private static final String UPDATED_POWERS = DEFAULT_POWERS + " (updated)";
+	private static final Set<Power> DEFAULT_POWERS = Set.of(new Power("chocolat", "Base", 10, "", "does not eat pain au chocolat"));
+	private static final Set<Power> UPDATED_POWERS = Set.of(new Power("dark chocolat", "Base", 99, "", "does not eat pain au dark chocolat"));
 	private static final int DEFAULT_LEVEL = 42;
 	private static final int UPDATED_LEVEL = DEFAULT_LEVEL + 1;
 	private static final Long DEFAULT_ID = 1L;
@@ -46,6 +60,9 @@ class HeroServiceTests {
 
 	@InjectMock
 	HeroRepository heroRepository;
+
+	@InjectMock
+	PowerRepository powerRepository;
 
 	@InjectSpy
 	HeroPartialUpdateMapper heroPartialUpdateMapper;
@@ -593,6 +610,8 @@ class HeroServiceTests {
 	@Test
 	public void partiallyUpdateHero() {
 		when(this.heroRepository.findById(eq(DEFAULT_ID))).thenReturn(Uni.createFrom().item(createDefaultHero()));
+		var mockedPower = UPDATED_POWERS.iterator().next();
+		when(this.powerRepository.findByName(any(String.class))).thenReturn(Uni.createFrom().item(mockedPower));
 
 		var hero = this.heroService.partialUpdateHero(createPartialUpdatedHero())
 			.subscribe().withSubscriber(UniAssertSubscriber.create())
@@ -621,6 +640,8 @@ class HeroServiceTests {
 
 		verify(this.heroRepository).findById(eq(DEFAULT_ID));
 		verifyNoMoreInteractions(this.heroRepository);
+		verify(this.powerRepository).findByName(any(String.class));
+		verifyNoMoreInteractions(this.powerRepository);		
 		verify(this.heroPartialUpdateMapper).mapPartialUpdate(any(Hero.class), any(Hero.class));
 		verifyNoInteractions(this.heroFullUpdateMapper);
 	}
@@ -691,7 +712,7 @@ class HeroServiceTests {
 		hero.setName(DEFAULT_NAME);
 		hero.setOtherName(DEFAULT_OTHER_NAME);
 		hero.setPicture(DEFAULT_PICTURE);
-		hero.setPowers(DEFAULT_POWERS);
+		hero.addAllPowers(DEFAULT_POWERS);
 		hero.setLevel(DEFAULT_LEVEL);
 
 		return hero;
@@ -702,7 +723,7 @@ class HeroServiceTests {
 		hero.setName(UPDATED_NAME);
 		hero.setOtherName(UPDATED_OTHER_NAME);
 		hero.setPicture(UPDATED_PICTURE);
-		hero.setPowers(UPDATED_POWERS);
+		hero.updatePowers(UPDATED_POWERS);
 		hero.setLevel(UPDATED_LEVEL);
 
 		return hero;
@@ -711,7 +732,7 @@ class HeroServiceTests {
 	public static Hero createPartialUpdatedHero() {
 		Hero hero = createDefaultHero();
 		hero.setPicture(UPDATED_PICTURE);
-		hero.setPowers(UPDATED_POWERS);
+		hero.updatePowers(UPDATED_POWERS);
 
 		return hero;
 	}

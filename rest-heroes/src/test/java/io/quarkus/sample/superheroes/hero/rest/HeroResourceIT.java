@@ -1,14 +1,27 @@
 package io.quarkus.sample.superheroes.hero.rest;
 
-import static io.restassured.RestAssured.*;
+import static io.restassured.RestAssured.delete;
+import static io.restassured.RestAssured.get;
+import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
 import static javax.ws.rs.core.MediaType.TEXT_PLAIN;
-import static javax.ws.rs.core.Response.Status.*;
+import static javax.ws.rs.core.Response.Status.BAD_REQUEST;
+import static javax.ws.rs.core.Response.Status.CREATED;
+import static javax.ws.rs.core.Response.Status.NOT_FOUND;
+import static javax.ws.rs.core.Response.Status.NO_CONTENT;
+import static javax.ws.rs.core.Response.Status.OK;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.blankOrNullString;
+import static org.hamcrest.Matchers.endsWith;
+import static org.hamcrest.Matchers.is;
 
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 
 import javax.ws.rs.core.HttpHeaders;
 
@@ -18,7 +31,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
 import io.quarkus.sample.superheroes.hero.Hero;
+import io.quarkus.sample.superheroes.hero.Power;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
+import io.restassured.common.mapper.TypeRef;
 
 @QuarkusIntegrationTest
 @TestMethodOrder(OrderAnnotation.class)
@@ -30,12 +45,14 @@ public class HeroResourceIT {
 	private static final String UPDATED_OTHER_NAME = DEFAULT_OTHER_NAME + " (updated)";
 	private static final String DEFAULT_PICTURE = "super_chocolatine.png";
 	private static final String UPDATED_PICTURE = "super_chocolatine_updated.png";
-	private static final String DEFAULT_POWERS = "does not eat pain au chocolat";
-	private static final String UPDATED_POWERS = DEFAULT_POWERS + " (updated)";
+	// private static final String DEFAULT_POWERS = "does not eat pain au chocolat";
+	// private static final String UPDATED_POWERS = DEFAULT_POWERS + " (updated)";
+	private static final Set<Power> DEFAULT_POWERS = Set.of(new Power("chocolat", "Base", 10, "", "does not eat pain au chocolat"));
+	private static final Set<Power> UPDATED_POWERS = Set.of(new Power("dark chocolat", "Base", 99, "", "does not eat pain au dark chocolat"));
 	private static final int DEFAULT_LEVEL = 42;
 	private static final int UPDATED_LEVEL = DEFAULT_LEVEL + 1;
 
-	private static final int NB_HEROES = 100;
+	private static final int NB_HEROES = 4; //100;
 	private static String heroId;
 
 	@Test
@@ -74,7 +91,7 @@ public class HeroResourceIT {
 		hero.setName(null);
 		hero.setOtherName(DEFAULT_OTHER_NAME);
 		hero.setPicture(DEFAULT_PICTURE);
-		hero.setPowers(DEFAULT_POWERS);
+		hero.addAllPowers(DEFAULT_POWERS);
 		hero.setLevel(0);
 
 		given()
@@ -95,7 +112,7 @@ public class HeroResourceIT {
 		hero.setName(null);
 		hero.setOtherName(UPDATED_OTHER_NAME);
 		hero.setPicture(UPDATED_PICTURE);
-		hero.setPowers(UPDATED_PICTURE);
+		hero.updatePowers(UPDATED_POWERS);
 		hero.setLevel(0);
 
 		given()
@@ -116,7 +133,7 @@ public class HeroResourceIT {
 		hero.setName(null);
 		hero.setOtherName(UPDATED_OTHER_NAME);
 		hero.setPicture(UPDATED_PICTURE);
-		hero.setPowers(UPDATED_PICTURE);
+		hero.updatePowers(UPDATED_POWERS);
 		hero.setLevel(0);
 
 		given()
@@ -162,7 +179,7 @@ public class HeroResourceIT {
 		hero.setName(UPDATED_NAME);
 		hero.setOtherName(UPDATED_OTHER_NAME);
 		hero.setPicture(UPDATED_PICTURE);
-		hero.setPowers(UPDATED_POWERS);
+		hero.updatePowers(UPDATED_POWERS);
 		hero.setLevel(UPDATED_LEVEL);
 
 		given()
@@ -193,7 +210,7 @@ public class HeroResourceIT {
 	public void shouldNotPartiallyUpdateNotFoundItem() {
 		Hero hero = new Hero();
 		hero.setPicture(DEFAULT_PICTURE);
-		hero.setPowers(DEFAULT_POWERS);
+		hero.addAllPowers(DEFAULT_POWERS);
 
 		given()
 			.when()
@@ -248,7 +265,7 @@ public class HeroResourceIT {
 		hero.setName(DEFAULT_NAME);
 		hero.setOtherName(DEFAULT_OTHER_NAME);
 		hero.setPicture(DEFAULT_PICTURE);
-		hero.setPowers(DEFAULT_POWERS);
+		hero.addAllPowers(DEFAULT_POWERS);
 		hero.setLevel(DEFAULT_LEVEL);
 
 		String location = given()
@@ -302,7 +319,7 @@ public class HeroResourceIT {
 		hero.setName(UPDATED_NAME);
 		hero.setOtherName(UPDATED_OTHER_NAME);
 		hero.setPicture(UPDATED_PICTURE);
-		hero.setPowers(UPDATED_POWERS);
+		hero.updatePowers(UPDATED_POWERS);
 		hero.setLevel(UPDATED_LEVEL);
 
 		given()
@@ -327,7 +344,7 @@ public class HeroResourceIT {
 	public void shouldPartiallyUpdateAnItem() {
 		Hero hero = new Hero();
 		hero.setPicture(DEFAULT_PICTURE);
-		hero.setPowers(DEFAULT_POWERS);
+		hero.addAllPowers(DEFAULT_POWERS);
 
 		given()
 			.when()
@@ -398,14 +415,14 @@ public class HeroResourceIT {
     h1.setName(DEFAULT_NAME);
     h1.setOtherName(DEFAULT_OTHER_NAME);
     h1.setPicture(DEFAULT_PICTURE);
-    h1.setPowers(DEFAULT_POWERS);
+    h1.addAllPowers(DEFAULT_POWERS);
     h1.setLevel(DEFAULT_LEVEL);
 
     var h2 = new Hero();
     h2.setName(UPDATED_NAME);
     h2.setOtherName(UPDATED_OTHER_NAME);
     h2.setPicture(UPDATED_PICTURE);
-    h2.setPowers(UPDATED_POWERS);
+    h2.updatePowers(UPDATED_POWERS);
     h2.setLevel(UPDATED_LEVEL);
 
 		given()
@@ -430,22 +447,39 @@ public class HeroResourceIT {
 				.statusCode(CREATED.getStatusCode())
 				.header(HttpHeaders.LOCATION, endsWith("/api/heroes"));
 
-    get("/api/heroes")
+    List<Hero> heroes = get("/api/heroes")
 			.then()
 				.statusCode(OK.getStatusCode())
 				.contentType(JSON)
-			  .body("$.size()", is(2),
-          "[0].name", is(DEFAULT_NAME),
-          "[0].otherName", is(DEFAULT_OTHER_NAME),
-          "[0].picture", is(DEFAULT_PICTURE),
-          "[0].powers", is(DEFAULT_POWERS),
-          "[0].level", is(DEFAULT_LEVEL),
-          "[1].name", is(UPDATED_NAME),
-          "[1].otherName", is(UPDATED_OTHER_NAME),
-          "[1].picture", is(UPDATED_PICTURE),
-          "[1].powers", is(UPDATED_POWERS),
-          "[1].level", is(UPDATED_LEVEL)
-        );
+			  // .body("$.size()", is(2),
+        //   "[0].name", is(DEFAULT_NAME),
+        //   "[0].otherName", is(DEFAULT_OTHER_NAME),
+        //   "[0].picture", is(DEFAULT_PICTURE),
+        //   "[0].powers", is(DEFAULT_POWERS),
+        //   "[0].level", is(DEFAULT_LEVEL),
+        //   "[1].name", is(UPDATED_NAME),
+        //   "[1].otherName", is(UPDATED_OTHER_NAME),
+        //   "[1].picture", is(UPDATED_PICTURE),
+        //   "[1].powers", is(UPDATED_POWERS),
+        //   "[1].level", is(UPDATED_LEVEL)
+        // );
+				.and()
+				.extract().body()
+				.as(new TypeRef<List<Hero>>() {});
+
+		assertThat(heroes.size(), is(2));
+		assertThat(heroes.get(0), notNullValue());
+		assertThat(heroes.get(0).getName(), is(DEFAULT_NAME));
+		assertThat(heroes.get(0).getOtherName(), is(DEFAULT_OTHER_NAME));
+		assertThat(heroes.get(0).getLevel(), is(DEFAULT_LEVEL));
+		assertThat(heroes.get(0).getPicture(), is(DEFAULT_PICTURE));
+		assertThat(heroes.get(0).getPowers(), equalTo(DEFAULT_POWERS));
+		assertThat(heroes.get(1), notNullValue());
+		assertThat(heroes.get(1).getName(), is(UPDATED_NAME));
+		assertThat(heroes.get(1).getOtherName(), is(UPDATED_OTHER_NAME));
+		assertThat(heroes.get(1).getLevel(), is(UPDATED_LEVEL));
+		assertThat(heroes.get(1).getPicture(), is(UPDATED_PICTURE));
+		assertThat(heroes.get(1).getPowers(), equalTo(UPDATED_POWERS));
   }
 
 	@Test

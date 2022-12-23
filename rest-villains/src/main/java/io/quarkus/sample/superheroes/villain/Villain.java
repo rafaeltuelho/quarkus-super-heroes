@@ -58,6 +58,15 @@ public class Villain extends PanacheEntityBase {
 	)
 	private Set<Power> powers = new HashSet<>();
 
+	/**
+	 * Returns a Set of Powers associated to this Villain
+	 * @return {@code Collections.unmodifiableSet(Set<Power>)}
+	 */
+  public Set<Power> getPowers() {
+    return powers;
+    // return Collections.unmodifiableSet(powers);
+  }
+
 	public void addPower(Power power) {
 		powers.add(power);
 		power.getVillains().add(this);
@@ -129,13 +138,4 @@ public class Villain extends PanacheEntityBase {
 	public int hashCode() {
 		return Objects.hash(this.id);
 	}
-
-	/**
-	 * Returns an immutable Set of Powers associated to this Villain
-	 * @return {@code Collections.unmodifiableSet(Set<Power>)}
-	 */
-  public Set<Power> getPowers() {
-    return powers;
-    // return Collections.unmodifiableSet(powers);
-  }
 }

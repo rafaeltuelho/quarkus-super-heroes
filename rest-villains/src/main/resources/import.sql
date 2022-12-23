@@ -1,6 +1,6 @@
 -- new villain
 INSERT INTO villain(id, name, otherName, picture, level)
-VALUES (nextval('villain_id_seq'), 'Dark Nebula', '', 'https://github.com/cescoffier/supes-data/raw/master/characters/dark-nebula-5121498967616865198.jpg', 230000);
+VALUES (nextval('villain_id_seq'), 'Dark Nebula', '', 'https://github.com/rafaeltuelho/supes-data/raw/master/characters/dark-nebula-5121498967616865198.jpg', 230000);
 INSERT INTO power(id, name, description, aliases, score, tier)
 VALUES(1, 'Antiforce Manipulation', 'The power to manipulate anti-forces. Sub-power of Physical Force Manipulation. Also Called Anti-Force Control User can create, shape and manipulate anti or negative forces, which work in different ways depending on the force. Anti-gravity would repel objects instead of attract, anti-electromagnetism would cause like charges to attract and opposite charges to repel, anti-friction and anti -viscosity would speed up objects or flow instead of resist them, anti-strong force would cause nuclei to explode, and anti-weak force would cause "radioactive growth" instead of radioactive decay.', 'Antiforce control', 12, 'Major');
 INSERT INTO villain_power(villain_id, power_id)
@@ -91,7 +91,7 @@ INSERT INTO villain_power(villain_id, power_id)
 VALUES(currval('villain_id_seq'), 22);
 -- new villain
 INSERT INTO villain(id, name, otherName, picture, level)
-VALUES (nextval('villain_id_seq'), 'Rao', '', 'https://github.com/cescoffier/supes-data/raw/master/characters/rao--252954003262452012.jpg', 180000);
+VALUES (nextval('villain_id_seq'), 'Rao', '', 'https://github.com/rafaeltuelho/supes-data/raw/master/characters/rao--252954003262452012.jpg', 180000);
 INSERT INTO power(id, name, description, aliases, score, tier)
 VALUES(23, 'Accelerated Healing', 'Having accelerated healing generally means the ability to rapidly heal, though this varies on different levels. While Spider-Man can heal from basic injuries much quicker than a regular human, he could not recover from being liquified, unlike Deadpool or the Hulk.', 'Healing Factor, Super Healing', 7, 'Minor');
 INSERT INTO villain_power(villain_id, power_id)
@@ -246,7 +246,7 @@ INSERT INTO villain_power(villain_id, power_id)
 VALUES(currval('villain_id_seq'), 58);
 -- new villain
 INSERT INTO villain(id, name, otherName, picture, level)
-VALUES (nextval('villain_id_seq'), 'Wanderer', '', 'https://github.com/cescoffier/supes-data/raw/master/characters/wanderer-300775911119209178.jpg', 1000000);
+VALUES (nextval('villain_id_seq'), 'Wanderer', '', 'https://github.com/rafaeltuelho/supes-data/raw/super-power-refactoring/characters/wanderer-300775911119209178.jpg', 1000000);
 INSERT INTO villain_power(villain_id, power_id)
 VALUES(currval('villain_id_seq'), 20);
 INSERT INTO power(id, name, description, aliases, score, tier)
@@ -279,7 +279,7 @@ INSERT INTO villain_power(villain_id, power_id)
 VALUES(currval('villain_id_seq'), 65);
 -- new villain
 INSERT INTO villain(id, name, otherName, picture, level)
-VALUES (nextval('villain_id_seq'), 'Phantom Dharak', 'Dharak', 'https://github.com/cescoffier/supes-data/raw/master/characters/dharak-4735040098648148723.jpg', 1000000);
+VALUES (nextval('villain_id_seq'), 'Phantom Dharak', 'Dharak', 'https://github.com/rafaeltuelho/supes-data/raw/master/characters/dharak-4735040098648148723.jpg', 1000000);
 INSERT INTO villain_power(villain_id, power_id)
 VALUES(currval('villain_id_seq'), 23);
 INSERT INTO villain_power(villain_id, power_id)

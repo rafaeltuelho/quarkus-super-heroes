@@ -2,14 +2,17 @@ package io.quarkus.sample.superheroes.hero.repository;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.Set;
 import java.util.stream.Stream;
 
 import javax.inject.Inject;
 
 import org.junit.jupiter.api.Test;
 
+import io.quarkus.hibernate.reactive.panache.Panache;
 import io.quarkus.logging.Log;
 import io.quarkus.sample.superheroes.hero.Hero;
+import io.quarkus.sample.superheroes.hero.Power;
 import io.quarkus.test.TestReactiveTransaction;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.vertx.UniAsserter;
@@ -20,20 +23,39 @@ class HeroRepositoryTests {
 	private static final String DEFAULT_NAME = "Super Chocolatine";
 	private static final String DEFAULT_OTHER_NAME = "Super Chocolatine chocolate in";
 	private static final String DEFAULT_PICTURE = "super_chocolatine.png";
-	private static final String DEFAULT_POWERS = "does not eat pain au chocolat";
+	// private static final String DEFAULT_POWERS = "does not eat pain au chocolat";
 	private static final int DEFAULT_LEVEL = 42;
-	
+  /** 
+   * create a new set of Powers for each test  to avoid Detached Entity issues
+   */
+  private Set<Power> defaultPowers() {
+    return Set.of(
+      new Power("chocolat", "Base", 10, "", "does not eat pain au chocolat"),
+      new Power("apple juice", "Base", 13, "", "likes apple juice")
+    );
+  }
+  	
 	@Inject
 	HeroRepository heroRepository;
 
+  @Inject
+	PowerRepository powerRepository;
+
 	@Test
+  @TestReactiveTransaction
 	public void findRandomNotFound(UniAsserter asserter) {
-		asserter.execute(this.heroRepository::deleteAll)
-			.assertEquals(this.heroRepository::count, 0L)
-			.assertThat(
-				this.heroRepository::findRandom,
-				hero -> assertThat(hero).isNull()
-			);
+    asserter.assertNotNull(() -> Panache.currentTransaction());
+    asserter.assertThat(this.heroRepository::deleteAll, n -> assertThat(n).isGreaterThan(0L));
+
+    asserter.assertThat(
+      this.heroRepository::count, 
+      count -> assertThat(count).isEqualTo(0L)
+    );
+
+    asserter.assertThat(
+      this.heroRepository::findRandom,
+      hero -> assertThat(hero).isNull()
+    );
 	}
 	
 	@Test
@@ -42,7 +64,8 @@ class HeroRepositoryTests {
 		hero.setName(DEFAULT_NAME);
 		hero.setOtherName(DEFAULT_OTHER_NAME);
 		hero.setPicture(DEFAULT_PICTURE);
-		hero.setPowers(DEFAULT_POWERS);
+		// hero.setPowers(DEFAULT_POWERS);
+    hero.addAllPowers(defaultPowers());
 		hero.setLevel(DEFAULT_LEVEL);
 
 		asserter.execute(this.heroRepository::deleteAll)
@@ -73,7 +96,8 @@ class HeroRepositoryTests {
     hero.setName(DEFAULT_NAME);
     hero.setOtherName(DEFAULT_OTHER_NAME);
     hero.setPicture(DEFAULT_PICTURE);
-    hero.setPowers(DEFAULT_POWERS);
+    // hero.setPowers(DEFAULT_POWERS);
+    hero.addAllPowers(defaultPowers());
     hero.setLevel(DEFAULT_LEVEL);
 
     asserter.execute(this.heroRepository::deleteAll)
@@ -105,7 +129,8 @@ class HeroRepositoryTests {
     hero.setName(DEFAULT_NAME);
     hero.setOtherName(DEFAULT_OTHER_NAME);
     hero.setPicture(DEFAULT_PICTURE);
-    hero.setPowers(DEFAULT_POWERS);
+    // hero.setPowers(DEFAULT_POWERS);
+    hero.addAllPowers(defaultPowers());
     hero.setLevel(DEFAULT_LEVEL);
 
     asserter.execute(this.heroRepository::deleteAll)

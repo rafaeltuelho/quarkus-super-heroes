@@ -1,11 +1,19 @@
 package io.quarkus.sample.superheroes.hero;
 
+import java.util.HashSet;
 import java.util.Objects;
+import java.util.Set;
 
-import javax.persistence.Column;
+import javax.persistence.CascadeType;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.JoinTable;
+import javax.persistence.ManyToMany;
+import javax.persistence.SequenceGenerator;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Positive;
 import javax.validation.constraints.Size;
@@ -15,9 +23,14 @@ import javax.validation.constraints.Size;
  */
 @Entity
 public class Hero {
-	@Id
-	@GeneratedValue
-	private Long id;
+  @Id
+  @SequenceGenerator(
+          name = "heroSequence",
+          sequenceName = "hero_id_seq",
+          allocationSize = 1,
+          initialValue = 1)
+  @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "heroSequence")
+  private Long id;
 
 	@NotNull
 	@Size(min = 3, max = 50)
@@ -31,8 +44,16 @@ public class Hero {
 
 	private String picture;
 
-	@Column(columnDefinition = "TEXT")
-	private String powers;
+	@ManyToMany(cascade = {
+		CascadeType.PERSIST,
+		CascadeType.MERGE
+	},
+	fetch = FetchType.EAGER)
+	@JoinTable(name = "hero_power",
+    joinColumns = @JoinColumn(name = "hero_id"),
+    inverseJoinColumns = @JoinColumn(name = "power_id")
+	)
+	private Set<Power> powers = new HashSet<>();
 
 	public Long getId() {
 		return this.id;
@@ -74,13 +95,37 @@ public class Hero {
 		this.picture = picture;
 	}
 
-	public String getPowers() {
-		return this.powers;
+	/**
+	 * Returns a Set of Powers associated to this Villain
+	 * @return {@code Collections.unmodifiableSet(Set<Power>)}
+	 */
+  public Set<Power> getPowers() {
+    return powers;
+    // return Collections.unmodifiableSet(powers);
+  }
+
+	public void addPower(Power power) {
+		powers.add(power);
+		power.getHeroes().add(this);
 	}
 
-	public void setPowers(String powers) {
-		this.powers = powers;
+	public void removePower(Power power) {
+			powers.remove(power);
+			// power.getHeroes().remove(this);
 	}
+
+	public void removeAllPowers() {
+		powers.forEach(this::removePower);
+	}
+
+	public void updatePowers(Set<Power> powers) {
+		this.removeAllPowers();
+		powers.forEach(this::addPower);
+	}
+
+	public void addAllPowers(Set<Power> powers) {
+		powers.forEach(this::addPower);
+	}	
 
 	@Override
 	public String toString() {
@@ -90,7 +135,7 @@ public class Hero {
 			", otherName='" + this.otherName + '\'' +
 			", level=" + this.level +
 			", picture='" + this.picture + '\'' +
-			", powers='" + this.powers + '\'' +
+			// ", powers='" + this.powers + '\'' +
 			'}';
 	}
 
