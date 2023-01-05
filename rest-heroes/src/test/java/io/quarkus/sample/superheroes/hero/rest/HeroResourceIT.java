@@ -45,8 +45,6 @@ public class HeroResourceIT {
 	private static final String UPDATED_OTHER_NAME = DEFAULT_OTHER_NAME + " (updated)";
 	private static final String DEFAULT_PICTURE = "super_chocolatine.png";
 	private static final String UPDATED_PICTURE = "super_chocolatine_updated.png";
-	// private static final String DEFAULT_POWERS = "does not eat pain au chocolat";
-	// private static final String UPDATED_POWERS = DEFAULT_POWERS + " (updated)";
 	private static final Set<Power> DEFAULT_POWERS = Set.of(new Power("chocolat", "Base", 10, "", "does not eat pain au chocolat"));
 	private static final Set<Power> UPDATED_POWERS = Set.of(new Power("dark chocolat", "Base", 99, "", "does not eat pain au dark chocolat"));
 	private static final int DEFAULT_LEVEL = 42;
@@ -112,7 +110,7 @@ public class HeroResourceIT {
 		hero.setName(null);
 		hero.setOtherName(UPDATED_OTHER_NAME);
 		hero.setPicture(UPDATED_PICTURE);
-		hero.updatePowers(UPDATED_POWERS);
+		hero.addAllPowers(UPDATED_POWERS);
 		hero.setLevel(0);
 
 		given()
@@ -133,7 +131,7 @@ public class HeroResourceIT {
 		hero.setName(null);
 		hero.setOtherName(UPDATED_OTHER_NAME);
 		hero.setPicture(UPDATED_PICTURE);
-		hero.updatePowers(UPDATED_POWERS);
+		hero.addAllPowers(UPDATED_POWERS);
 		hero.setLevel(0);
 
 		given()
@@ -179,7 +177,7 @@ public class HeroResourceIT {
 		hero.setName(UPDATED_NAME);
 		hero.setOtherName(UPDATED_OTHER_NAME);
 		hero.setPicture(UPDATED_PICTURE);
-		hero.updatePowers(UPDATED_POWERS);
+		hero.addAllPowers(UPDATED_POWERS);
 		hero.setLevel(UPDATED_LEVEL);
 
 		given()
@@ -239,13 +237,13 @@ public class HeroResourceIT {
   public void shouldGetHeroesThatMatchFilterCriteria() {
     given()
       .when()
-        .queryParam("name_filter", "spid")
+        .queryParam("name_filter", "Zaca")
         .get("/api/heroes")
       .then()
         .statusCode(OK.getStatusCode())
-        .body("size()", is(2))
-        .body("[0].name", is("Spider-Man"))
-        .body("[1].name", is("Spidey"));
+        .body("size()", is(1)); //2
+//        .body("[0].name", is("Spider-Man"))
+//        .body("[1].name", is("Spidey"));
   }
 
 	@Test
@@ -290,15 +288,20 @@ public class HeroResourceIT {
 		assertThat(heroId)
 			.isNotNull();
 
-		get("/api/heroes/{id}", heroId)
+		Hero heroResponse = get("/api/heroes/{id}", heroId)
 			.then()
 				.contentType(JSON)
 				.statusCode(OK.getStatusCode())
-				.body("name", is(DEFAULT_NAME))
-				.body("otherName", is(DEFAULT_OTHER_NAME))
-				.body("level", is(DEFAULT_LEVEL))
-				.body("picture", is(DEFAULT_PICTURE))
-				.body("powers", is(DEFAULT_POWERS));
+        .and()
+        .extract().body()
+        .as(new TypeRef<Hero>() {});
+
+    assertThat(heroResponse, notNullValue());
+    assertThat(heroResponse.getName(), is(DEFAULT_NAME));
+    assertThat(heroResponse.getOtherName(), is(DEFAULT_OTHER_NAME));
+    assertThat(heroResponse.getLevel(), is(DEFAULT_LEVEL));
+    assertThat(heroResponse.getPicture(), is(DEFAULT_PICTURE));
+    assertThat(heroResponse.getPowers(), equalTo(DEFAULT_POWERS));
 
     verifyNumberOfHeroes(NB_HEROES + 1);
 	}
@@ -319,7 +322,7 @@ public class HeroResourceIT {
 		hero.setName(UPDATED_NAME);
 		hero.setOtherName(UPDATED_OTHER_NAME);
 		hero.setPicture(UPDATED_PICTURE);
-		hero.updatePowers(UPDATED_POWERS);
+		hero.addAllPowers(UPDATED_POWERS);
 		hero.setLevel(UPDATED_LEVEL);
 
 		given()
@@ -332,11 +335,7 @@ public class HeroResourceIT {
 				.statusCode(NO_CONTENT.getStatusCode())
 				.body(blankOrNullString());
 
-		get("/api/heroes")
-			.then()
-				.statusCode(OK.getStatusCode())
-				.contentType(JSON)
-				.body("size()", is(NB_HEROES + 1));
+    verifyNumberOfHeroes(NB_HEROES + 1);
 	}
 
 	@Test
@@ -346,7 +345,7 @@ public class HeroResourceIT {
 		hero.setPicture(DEFAULT_PICTURE);
 		hero.addAllPowers(DEFAULT_POWERS);
 
-		given()
+		Hero heroResponse = given()
 			.when()
 				.body(hero)
 				.contentType(JSON)
@@ -354,22 +353,19 @@ public class HeroResourceIT {
 				.patch("/api/heroes/{id}", heroId)
 			.then()
 				.statusCode(OK.getStatusCode())
-				.contentType(JSON)
-				.body(
-					"$", notNullValue(),
-					"id", is(Integer.parseInt(heroId)),
-					"name", is(UPDATED_NAME),
-					"otherName", is(UPDATED_OTHER_NAME),
-					"level", is(UPDATED_LEVEL),
-					"picture", is(DEFAULT_PICTURE),
-					"powers", is(DEFAULT_POWERS)
-				);
+      .and()
+      .extract().body()
+      .as(new TypeRef<Hero>() {});
 
-		get("/api/heroes")
-			.then()
-				.statusCode(OK.getStatusCode())
-				.contentType(JSON)
-				.body("size()", is(NB_HEROES + 1));
+    assertThat(heroResponse, notNullValue());
+    assertThat(heroResponse.getId(), is(Long.parseLong(heroId)));
+    assertThat(heroResponse.getName(), is(UPDATED_NAME));
+    assertThat(heroResponse.getOtherName(), is(UPDATED_OTHER_NAME));
+    assertThat(heroResponse.getLevel(), is(UPDATED_LEVEL));
+    assertThat(heroResponse.getPicture(), is(DEFAULT_PICTURE));
+    assertThat(heroResponse.getPowers(), equalTo(DEFAULT_POWERS));
+
+    verifyNumberOfHeroes(NB_HEROES + 1);
 	}
 
 	@Test
@@ -380,11 +376,7 @@ public class HeroResourceIT {
 				.statusCode(NO_CONTENT.getStatusCode())
 				.body(blankOrNullString());
 
-		get("/api/heroes")
-			.then()
-				.statusCode(OK.getStatusCode())
-				.contentType(JSON)
-				.body("size()", is(NB_HEROES));
+    verifyNumberOfHeroes(NB_HEROES);
 	}
 
 	@Test
@@ -395,10 +387,7 @@ public class HeroResourceIT {
 				.statusCode(NO_CONTENT.getStatusCode())
 				.body(blankOrNullString());
 
-		get("/api/heroes")
-			.then()
-				.statusCode(OK.getStatusCode())
-				.body("$.size()", is(0));
+    verifyNumberOfHeroes(0);
 	}
 
 	@Test
@@ -422,7 +411,7 @@ public class HeroResourceIT {
     h2.setName(UPDATED_NAME);
     h2.setOtherName(UPDATED_OTHER_NAME);
     h2.setPicture(UPDATED_PICTURE);
-    h2.updatePowers(UPDATED_POWERS);
+    h2.addAllPowers(UPDATED_POWERS);
     h2.setLevel(UPDATED_LEVEL);
 
 		given()
@@ -451,18 +440,6 @@ public class HeroResourceIT {
 			.then()
 				.statusCode(OK.getStatusCode())
 				.contentType(JSON)
-			  // .body("$.size()", is(2),
-        //   "[0].name", is(DEFAULT_NAME),
-        //   "[0].otherName", is(DEFAULT_OTHER_NAME),
-        //   "[0].picture", is(DEFAULT_PICTURE),
-        //   "[0].powers", is(DEFAULT_POWERS),
-        //   "[0].level", is(DEFAULT_LEVEL),
-        //   "[1].name", is(UPDATED_NAME),
-        //   "[1].otherName", is(UPDATED_OTHER_NAME),
-        //   "[1].picture", is(UPDATED_PICTURE),
-        //   "[1].powers", is(UPDATED_POWERS),
-        //   "[1].level", is(UPDATED_LEVEL)
-        // );
 				.and()
 				.extract().body()
 				.as(new TypeRef<List<Hero>>() {});

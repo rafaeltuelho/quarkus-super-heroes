@@ -9,10 +9,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyIterable;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 import java.time.Duration;
 import java.util.List;
@@ -47,8 +44,6 @@ class HeroServiceTests {
 	private static final String UPDATED_OTHER_NAME = DEFAULT_OTHER_NAME + " (updated)";
 	private static final String DEFAULT_PICTURE = "super_chocolatine.png";
 	private static final String UPDATED_PICTURE = "super_chocolatine_updated.png";
-	// private static final String DEFAULT_POWERS = "does not eat pain au chocolat";
-	// private static final String UPDATED_POWERS = DEFAULT_POWERS + " (updated)";
 	private static final Set<Power> DEFAULT_POWERS = Set.of(new Power("chocolat", "Base", 10, "", "does not eat pain au chocolat"));
 	private static final Set<Power> UPDATED_POWERS = Set.of(new Power("dark chocolat", "Base", 99, "", "does not eat pain au dark chocolat"));
 	private static final int DEFAULT_LEVEL = 42;
@@ -691,7 +686,8 @@ class HeroServiceTests {
 
     when(this.heroRepository.deleteById(anyLong())).thenReturn(Uni.createFrom().item(true));
 		when(this.heroRepository.listAll()).thenReturn(Uni.createFrom().item(List.of(h1, h2)));
-    when(this.heroRepository.persist(anyIterable())).thenReturn(Uni.createFrom().voidItem());
+    when(this.heroRepository.persist(h1)).thenReturn(Uni.createFrom().item(h1));
+    when(this.heroRepository.persist(h2)).thenReturn(Uni.createFrom().item(h2));
 
     this.heroService.replaceAllHeroes(heroes)
       .subscribe().withSubscriber(UniAssertSubscriber.create())
@@ -699,10 +695,10 @@ class HeroServiceTests {
       .awaitItem(Duration.ofSeconds(5))
       .getItem();
 
-    verify(this.heroRepository).listAll();
+    verify(this.heroRepository, times(1)).listAll();
 		verify(this.heroRepository).deleteById(eq(h1.getId()));
 		verify(this.heroRepository).deleteById(eq(h2.getId()));
-    verify(this.heroRepository).persist(anyIterable());
+    verify(this.heroRepository,times(2)).persist(any(Hero.class));//(anyIterable());
 		verifyNoMoreInteractions(this.heroRepository);
   }
 

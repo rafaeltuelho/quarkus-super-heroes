@@ -77,7 +77,7 @@ public class VillainService {
 	public Villain persistVillain(@SpanAttribute("arg.villain") @NotNull @Valid Villain villain) {
     Log.debugf("Persisting villain: %s", villain);
 		villain.level = (int) Math.round(villain.level * this.villainConfig.level().multiplier());
-		villain.updatePowers(filteredSetOfPowers(villain));
+		villain.updatePowers(mergePowers(villain));
 		Villain.persist(villain);
 
 		return villain;
@@ -100,7 +100,7 @@ public class VillainService {
 		return Villain.findByIdOptional(villain.id)
 			.map(Villain.class::cast) // Only here for type erasure within the IDE
 			.map(v -> {
-				villain.updatePowers(filteredSetOfPowers(villain));
+				villain.updatePowers(mergePowers(villain));
 				this.villainPartialUpdateMapper.mapPartialUpdate(villain, v);
 				return v;
 			})
@@ -113,7 +113,7 @@ public class VillainService {
     deleteAllVillains();
 
 		villains.forEach((v) -> {
-			v.updatePowers(filteredSetOfPowers(v));
+			v.updatePowers(mergePowers(v));
 		});
 
     Villain.persist(villains);
@@ -155,7 +155,7 @@ public class VillainService {
 	 * @param villain
 	 * @return {@code Set<Power>} A new Set of Power containing both managed and detached Power instances
 	 */
-	private Set<Power> filteredSetOfPowers(Villain villain) {
+	private Set<Power> mergePowers(Villain villain) {
 		Log.debugf("check if any power already exist in the DB to avoid duplication issues: %s", villain.getPowers());
 		Set<Power> newPowers = new HashSet<>();
 		villain.getPowers().forEach(p -> {

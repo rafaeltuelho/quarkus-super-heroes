@@ -337,11 +337,7 @@ public class VillainResourceIT {
 				.statusCode(NO_CONTENT.getStatusCode())
 				.body(blankOrNullString());
 
-		get("/api/villains")
-			.then()
-				.statusCode(OK.getStatusCode())
-				.contentType(JSON)
-				.body("size()", is(NB_VILLAINS + 1));
+    verifyNumberOfVillains(NB_VILLAINS +1);
 	}
 
 	@Test
@@ -373,11 +369,7 @@ public class VillainResourceIT {
 		assertThat(villainResponse.picture, is(DEFAULT_PICTURE));
 		assertThat(villainResponse.getPowers(), equalTo(DEFAULT_POWERS));
 
-		get("/api/villains")
-			.then()
-				.statusCode(OK.getStatusCode())
-				.contentType(JSON)
-				.body("size()", is(NB_VILLAINS + 1));
+    verifyNumberOfVillains(NB_VILLAINS +1);
 	}
 
 	@Test
@@ -388,11 +380,7 @@ public class VillainResourceIT {
 				.statusCode(NO_CONTENT.getStatusCode())
 				.body(blankOrNullString());
 
-		get("/api/villains")
-			.then()
-				.statusCode(OK.getStatusCode())
-				.contentType(JSON)
-				.body("size()", is(NB_VILLAINS));
+    verifyNumberOfVillains(NB_VILLAINS);
 	}
 
 	@Test
@@ -403,10 +391,7 @@ public class VillainResourceIT {
 				.statusCode(NO_CONTENT.getStatusCode())
 				.body(blankOrNullString());
 
-		get("/api/villains")
-			.then()
-				.statusCode(OK.getStatusCode())
-				.body("$.size()", is(0));
+    verifyNumberOfVillains(0);
 	}
 
 	@Test

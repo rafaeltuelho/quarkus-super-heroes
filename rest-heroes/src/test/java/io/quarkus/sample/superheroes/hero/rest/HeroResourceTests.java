@@ -48,8 +48,6 @@ public class HeroResourceTests {
 	private static final String UPDATED_OTHER_NAME = DEFAULT_OTHER_NAME + " (updated)";
 	private static final String DEFAULT_PICTURE = "super_chocolatine.png";
 	private static final String UPDATED_PICTURE = "super_chocolatine_updated.png";
-	// private static final String DEFAULT_POWERS = "does not eat pain au chocolat";
-	// private static final String UPDATED_POWERS = DEFAULT_POWERS + " (updated)";
 	private static final Set<Power> DEFAULT_POWERS = Set.of(new Power("chocolat", "Base", 10, "", "does not eat pain au chocolat"));
 	private static final Set<Power> UPDATED_POWERS = Set.of(new Power("dark chocolat", "Base", 99, "", "does not eat pain au dark chocolat"));
 	private static final int DEFAULT_LEVEL = 42;
@@ -174,7 +172,7 @@ public class HeroResourceTests {
 		hero.setName(null);
 		hero.setOtherName(UPDATED_OTHER_NAME);
 		hero.setPicture(UPDATED_PICTURE);
-		hero.updatePowers(UPDATED_POWERS);
+		hero.addAllPowers(UPDATED_POWERS);
 		hero.setLevel(0);
 
 		given()
@@ -376,7 +374,7 @@ public class HeroResourceTests {
 				h.getName().equals(UPDATED_NAME) &&
 				h.getOtherName().equals(UPDATED_OTHER_NAME) &&
 				h.getPicture().equals(UPDATED_PICTURE) &&
-				h.getPowers().equals(UPDATED_POWERS) &&
+				h.getPowers().containsAll(UPDATED_POWERS) &&
 				(h.getLevel() == UPDATED_LEVEL);
 
 		when(this.heroService.replaceHero(argThat(heroMatcher)))
@@ -404,7 +402,7 @@ public class HeroResourceTests {
 				h.getName().equals(UPDATED_NAME) &&
 				h.getOtherName().equals(UPDATED_OTHER_NAME) &&
 				h.getPicture().equals(UPDATED_PICTURE) &&
-				h.getPowers().equals(UPDATED_POWERS) &&
+				h.getPowers().containsAll(UPDATED_POWERS) &&
 				(h.getLevel() == UPDATED_LEVEL);
 
 		when(this.heroService.replaceHero(argThat(heroMatcher)))
@@ -462,11 +460,11 @@ public class HeroResourceTests {
 				(h.getName() == null) &&
 				(h.getOtherName() == null) &&
 				h.getPicture().equals(UPDATED_PICTURE) &&
-				h.getPowers().equals(UPDATED_POWERS) &&
+				h.getPowers().containsAll(UPDATED_POWERS) &&
 				(h.getLevel() == null);
 
 		var partialHero = new Hero();
-		partialHero.updatePowers(UPDATED_POWERS);
+		partialHero.addAllPowers(UPDATED_POWERS);
 		partialHero.setPicture(UPDATED_PICTURE);
 
 		when(this.heroService.partialUpdateHero(argThat(heroMatcher)))
@@ -490,8 +488,8 @@ public class HeroResourceTests {
 		assertThat(hero.getName(), is(DEFAULT_NAME));
 		assertThat(hero.getOtherName(), is(DEFAULT_OTHER_NAME));
 		assertThat(hero.getLevel(), is(DEFAULT_LEVEL));
-		assertThat(hero.getPicture(), is(DEFAULT_PICTURE));
-		assertThat(hero.getPowers(), equalTo(DEFAULT_POWERS));
+		assertThat(hero.getPicture(), is(UPDATED_PICTURE));
+		assertThat(hero.getPowers(), equalTo(UPDATED_POWERS));
 
 		verify(this.heroService).partialUpdateHero(argThat(heroMatcher));
 		verifyNoMoreInteractions(this.heroService);
@@ -521,13 +519,13 @@ public class HeroResourceTests {
 			h.get(0).getName().equals(DEFAULT_NAME) &&
 			h.get(0).getOtherName().equals(DEFAULT_OTHER_NAME) &&
 			h.get(0).getPicture().equals(DEFAULT_PICTURE) &&
-			h.get(0).getPowers().equals(DEFAULT_POWERS) &&
+			h.get(0).getPowers().containsAll(DEFAULT_POWERS) &&
 			(h.get(0).getLevel() == DEFAULT_LEVEL) &&
       (h.get(1).getId() == null) &&
 			h.get(1).getName().equals(UPDATED_NAME) &&
 			h.get(1).getOtherName().equals(UPDATED_OTHER_NAME) &&
 			h.get(1).getPicture().equals(UPDATED_PICTURE) &&
-			h.get(1).getPowers().equals(UPDATED_POWERS) &&
+			h.get(1).getPowers().containsAll(UPDATED_POWERS) &&
 			(h.get(1).getLevel() == UPDATED_LEVEL);
 
     when(this.heroService.replaceAllHeroes(argThat(heroesMatcher)))

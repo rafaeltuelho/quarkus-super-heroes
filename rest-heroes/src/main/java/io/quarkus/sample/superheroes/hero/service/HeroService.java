@@ -1,8 +1,9 @@
 package io.quarkus.sample.superheroes.hero.service;
 
-import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.validation.ConstraintViolationException;
@@ -23,11 +24,14 @@ import io.quarkus.sample.superheroes.hero.repository.PowerRepository;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 
+import org.jboss.logging.Logger;
+
 /**
  * Service class containing business methods for the application.
  */
 @ApplicationScoped
 public class HeroService {
+  private final Logger logger = Logger.getLogger(HeroService.class);
 	private final HeroRepository heroRepository;
 	private final PowerRepository powerRepository;
 	private final Validator validator;
@@ -70,8 +74,12 @@ public class HeroService {
   @WithSpan("HeroService.persistHero")
 	public Uni<Hero> persistHero(@SpanAttribute("arg.hero") @NotNull @Valid Hero hero) {
     Log.debugf("Persisting hero: %s", hero);
-		hero.updatePowers(filteredSetOfPowers(hero));
-		return this.heroRepository.persist(hero);
+	  return this.mergePowers(hero).onItem().transformToUni(mergedPowers -> {
+      Log.debugf("Updating hero's (%s) powers list after merging with existing powers: %s", hero.getName(), mergedPowers);
+      hero.getPowers().clear();
+			hero.addAllPowers(mergedPowers);
+			return this.heroRepository.persist(hero);
+		});
 	}
 
 	@ReactiveTransactional
@@ -90,23 +98,39 @@ public class HeroService {
 	public Uni<Hero> partialUpdateHero(@SpanAttribute("arg.hero") @NotNull Hero hero) {
     Log.debugf("Partially updating hero: %s", hero);
 		return this.heroRepository.findById(hero.getId())
-			.onItem().ifNotNull().transform(h -> {
-				hero.updatePowers(filteredSetOfPowers(hero));
-				this.heroPartialUpdateMapper.mapPartialUpdate(hero, h);
-				return h;
-			})
-			.onItem().ifNotNull().transform(this::validatePartialUpdate);
+			.onItem().ifNotNull().transformToUni(h -> {
+				return this.mergePowers(hero).onItem().transform(set -> {
+					hero.updatePowers(set);
+					this.heroPartialUpdateMapper.mapPartialUpdate(hero, h);
+					this.validatePartialUpdate(h);
+					return h;
+				});
+			});
 	}
 
   @ReactiveTransactional
   @WithSpan("HeroService.replaceAllHeroes")
   public Uni<Void> replaceAllHeroes(@SpanAttribute("arg.heroes") List<Hero> heroes) {
-    Log.debug("Replacing all heroes");
-		heroes.forEach((v) -> {
-			v.updatePowers(filteredSetOfPowers(v));
-		});
+    Log.info("Replacing all heroes");
+		Multi<Hero> multiHeroes = Multi.createFrom().items(heroes.stream());
+
     return deleteAllHeroes()
-      .replaceWith(this.heroRepository.persist(heroes));
+      .onItem().invoke(() -> logger.debug("current Heroes deleted!"))
+      .chain(() -> {
+        Multi<Hero> heroesWithMergedPowers = multiHeroes.onItem().transformToUniAndConcatenate(hero -> {
+          return mergePowers(hero).onItem().transformToUni(mergedPowers -> {
+            Log.debugf("Updating hero's (%s) powers list after merging with existing powers: %s", hero.getName(), mergedPowers);
+            hero.getPowers().clear();
+            hero.addAllPowers(mergedPowers);
+            return Uni.createFrom().item(hero);
+          });
+        });
+
+        return heroesWithMergedPowers.onItem().transformToUniAndConcatenate(h -> {
+          Log.debugf("Persisting hero: %s", h);
+          return this.heroRepository.persist(h);
+        }).collect().asList().replaceWithVoid();
+      });
   }
 
 	/**
@@ -145,29 +169,24 @@ public class HeroService {
 	}
 
 	/**
-	 * Check if any power associated with {@code Hero} already exist in the DB to avoid duplication issues
+   * Merge Hero's powers list by checking if any power is already persisted in DB
 	 * @param hero
 	 * @return {@code Set<Power>} A new Set of Power containing both managed and detached Power instances
 	 */
-	private Set<Power> filteredSetOfPowers(Hero hero) {
+	private Uni<Set<Power>> mergePowers(Hero hero) {
 		Log.debugf("check if any power already exist in the DB to avoid duplication issues: %s", hero.getPowers());
-		Set<Power> newPowers = new HashSet<>();
-		hero.getPowers().forEach(p -> {
-			this.powerRepository.findByName(p.getName())
-			.onItem()
-			.ifNotNull()
-			.invoke(persistedPower -> {
-				Log.debugf("Power [%s] already exist in the Database. It will be just associated with this Hero instance.", persistedPower.getName());
-				newPowers.add(persistedPower); // replace by the already persisted power. Thus it will be just updated?!
-			})
-			.onItem()
-			.ifNull()
-			.continueWith(() -> {
-				Log.debugf("Power [%s] doesn't exist yet. It will be persisted and the associated with this Hero.", p.getName());
-				newPowers.add(p); // add as a new Power
-				return p;
-			});
-		});
-		return newPowers;
+		
+		Multi<Power> multiPowers = Multi.createFrom().items(hero.getPowers().stream());
+    return multiPowers
+			.onItem().transformToUniAndConcatenate( p ->
+				this.powerRepository.findByName(p.getName())
+          .onItem().ifNotNull().invoke(persistedPower ->
+            Log.debugf("Power [id=%d - %s] already exist in the Database. It will be just associated with this Hero instance.",
+              persistedPower.getId(), persistedPower.getName())
+          ).onItem().ifNull().continueWith(() -> {
+						Log.debugf("Power [%s] doesn't exist yet. It will be persisted and the associated with this Hero.", p.getName());
+						return p;
+					}) )
+        .collect().with(Collectors.toSet());
 	}
 }

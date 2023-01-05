@@ -14,7 +14,7 @@ import io.smallrye.mutiny.Uni;
 public class PowerRepository implements PanacheRepositoryBase<Power, Long> {
   public Uni<Power> findByName(String name) {
     return (name != null) ?
-           find("name", name).singleResult() :
+           find("name", name).singleResult().onFailure().recoverWithNull() :
            Uni.createFrom().nullItem();
   }
 }

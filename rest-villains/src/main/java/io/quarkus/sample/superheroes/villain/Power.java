@@ -78,12 +78,12 @@ public class Power extends PanacheEntityBase {
     if (obj == null || getClass() != obj.getClass())
       return false;
     Power other = (Power) obj;
-    return Objects.equals(name, other.name);
+    return name.equalsIgnoreCase(other.name);
   }
 
   @Override
   public String toString() {
-    return "Power [aliases=" + aliases + ", description=" + description + ", name=" + name + ", score=" + score
+    return "Power [id=" + id + ", aliases=" + aliases + ", description=" + description + ", name=" + name + ", score=" + score
         + ", tier=" + tier + "]";
   }
 

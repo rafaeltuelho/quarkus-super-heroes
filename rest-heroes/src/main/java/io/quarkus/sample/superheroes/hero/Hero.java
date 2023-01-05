@@ -1,5 +1,10 @@
 package io.quarkus.sample.superheroes.hero;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
+import org.hibernate.reactive.mutiny.Mutiny;
+import org.jboss.logging.Logger;
+
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
@@ -23,6 +28,8 @@ import javax.validation.constraints.Size;
  */
 @Entity
 public class Hero {
+  @JsonIgnore
+  private final Logger logger = Logger.getLogger(Hero.class);
   @Id
   @SequenceGenerator(
           name = "heroSequence",
@@ -97,21 +104,19 @@ public class Hero {
 
 	/**
 	 * Returns a Set of Powers associated to this Villain
-	 * @return {@code Collections.unmodifiableSet(Set<Power>)}
+	 * @return {@code Set<Power>}
 	 */
   public Set<Power> getPowers() {
     return powers;
-    // return Collections.unmodifiableSet(powers);
   }
 
 	public void addPower(Power power) {
 		powers.add(power);
-		power.getHeroes().add(this);
 	}
 
 	public void removePower(Power power) {
 			powers.remove(power);
-			// power.getHeroes().remove(this);
+//      power.getHeroes().remove(this);
 	}
 
 	public void removeAllPowers() {
@@ -120,7 +125,7 @@ public class Hero {
 
 	public void updatePowers(Set<Power> powers) {
 		this.removeAllPowers();
-		powers.forEach(this::addPower);
+    powers.forEach(this::addPower);
 	}
 
 	public void addAllPowers(Set<Power> powers) {
@@ -148,7 +153,7 @@ public class Hero {
 			return false;
 		}
 		Hero hero = (Hero) o;
-		return this.id.equals(hero.id);
+    return id != null && this.id.equals(hero.id);
 	}
 
 	@Override
