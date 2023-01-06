@@ -57,7 +57,7 @@ public class HeaderPropagationTests {
   private static final String HERO_API_HELLO_URI = HERO_API_BASE_URI + "/hello";
   private static final String DEFAULT_HERO_NAME = "Super Baguette";
   private static final String DEFAULT_HERO_PICTURE = "super_baguette.png";
-  private static final String DEFAULT_HERO_POWERS = "eats baguette really quickly";
+  private static final Set<Power> DEFAULT_HERO_POWERS = Set.of(new Power("baguette", "Base", 10, "super_baguette", "eats baguette really quickly"));
   private static final int DEFAULT_HERO_LEVEL = 62;
 
   private static final Hero DEFAULT_HERO = new Hero(
@@ -122,7 +122,7 @@ public class HeaderPropagationTests {
       assertThat(randomFighter.getHero().getName(), is(DEFAULT_HERO_NAME));
       assertThat(randomFighter.getHero().getLevel(), is(DEFAULT_HERO_LEVEL));
       assertThat(randomFighter.getHero().getPicture(), is(DEFAULT_HERO_PICTURE));
-      assertThat(randomFighter.getHero().getPowers(), is(DEFAULT_HERO_POWERS));
+      assertThat(randomFighter.getHero().getPowers(), equalTo(DEFAULT_HERO_POWERS));
       assertThat(randomFighter.getVillain(), notNullValue());
       assertThat(randomFighter.getVillain().getName(), is(DEFAULT_VILLAIN_NAME));
       assertThat(randomFighter.getVillain().getLevel(), is(DEFAULT_VILLAIN_LEVEL));

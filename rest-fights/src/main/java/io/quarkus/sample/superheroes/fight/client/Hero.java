@@ -5,6 +5,9 @@ import javax.validation.constraints.NotNull;
 
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
+import java.util.HashSet;
+import java.util.Set;
+
 /**
  * POJO representing a Hero response from the Hero service
  */
@@ -19,9 +22,9 @@ public class Hero {
 	@NotEmpty
 	private String picture;
 
-	private String powers;
+	private Set<Power> powers = new HashSet<>();
 
-	public Hero(String name, int level, String picture, String powers) {
+	public Hero(String name, int level, String picture, Set<Power> powers) {
 		this.name = name;
 		this.level = level;
 		this.picture = picture;
@@ -55,11 +58,11 @@ public class Hero {
 		this.picture = picture;
 	}
 
-	public String getPowers() {
+	public Set<Power> getPowers() {
 		return this.powers;
 	}
 
-	public void setPowers(String powers) {
+	public void setPowers(Set<Power> powers) {
 		this.powers = powers;
 	}
 

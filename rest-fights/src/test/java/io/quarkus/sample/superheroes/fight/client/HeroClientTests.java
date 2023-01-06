@@ -6,6 +6,7 @@ import static javax.ws.rs.core.MediaType.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.Duration;
+import java.util.Set;
 import java.util.stream.IntStream;
 
 import javax.inject.Inject;
@@ -40,7 +41,8 @@ class HeroClientTests {
   private static final String HERO_HELLO_URI = HERO_API_BASE_URI + "/hello";
   private static final String DEFAULT_HERO_NAME = "Super Baguette";
   private static final String DEFAULT_HERO_PICTURE = "super_baguette.png";
-  private static final String DEFAULT_HERO_POWERS = "eats baguette really quickly";
+  private static final Set<Power> DEFAULT_HERO_POWERS = Set.of(new Power("baguette", "Base", 10, "super_baguette", "eats baguette really quickly"));
+
   private static final int DEFAULT_HERO_LEVEL = 42;
 
   private static final Hero DEFAULT_HERO = new Hero(
@@ -88,8 +90,7 @@ class HeroClientTests {
           .awaitItem(Duration.ofSeconds(5))
           .getItem();
 
-        assertThat(hero)
-          .isNotNull()
+        assertThat(hero).isNotNull()
           .extracting(
             Hero::getName,
             Hero::getLevel,

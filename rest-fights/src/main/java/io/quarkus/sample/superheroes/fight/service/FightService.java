@@ -46,7 +46,8 @@ public class FightService {
 	private final FightConfig fightConfig;
   private final FightMapper fightMapper;
 	private final Random random = new Random();
-	private final Set<Power> FALLBACK_VILLAIN_POWERS = Set.of(new Power("Fallback villain Super Power", "Base", 10, "fallback.png", "fallback..."));
+  private final Set<Power> FALLBACK_HERO_POWERS = Set.of(new Power("Fallback hero Super Power", "Base", 10, "fallback.png", "fallback..."));
+  private final Set<Power> FALLBACK_VILLAIN_POWERS = Set.of(new Power("Fallback villain Super Power", "Base", 10, "fallback.png", "fallback..."));
 
 
 	public FightService(HeroClient heroClient, VillainClient villainClient, @Channel("fights") MutinyEmitter<io.quarkus.sample.superheroes.fight.schema.Fight> emitter, FightConfig fightConfig, FightMapper fightMapper) {
@@ -162,7 +163,7 @@ public class FightService {
 			this.fightConfig.hero().fallback().name(),
 			this.fightConfig.hero().fallback().level(),
 			this.fightConfig.hero().fallback().picture(),
-			this.fightConfig.hero().fallback().powers()
+			FALLBACK_HERO_POWERS
 		);
 	}
 

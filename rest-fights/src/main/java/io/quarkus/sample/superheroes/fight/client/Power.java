@@ -78,7 +78,7 @@ public class Power {
     if (!(obj instanceof Power))
       return false;
     Power other = (Power) obj;
-    return Objects.equals(name, other.name);
+    return name.equalsIgnoreCase(other.name);
   }
 
   @Override

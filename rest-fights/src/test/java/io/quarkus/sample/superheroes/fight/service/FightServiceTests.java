@@ -64,7 +64,8 @@ class FightServiceTests {
 
 	private static final String DEFAULT_HERO_NAME = "Super Baguette";
 	private static final String DEFAULT_HERO_PICTURE = "super_baguette.png";
-	private static final String DEFAULT_HERO_POWERS = "eats baguette really quickly";
+  private static final Set<Power> DEFAULT_HERO_POWERS = Set.of(new Power("baguette", "Base", 10, "baguette.png", "eats baguette really fast"));
+  private static final Set<Power> FALLBACK_HERO_POWERS = Set.of(new Power("Fallback hero Super Power", "Base", 10, "fallback.png", "fallback..."));
 	private static final int DEFAULT_HERO_LEVEL = 42;
 	private static final String HEROES_TEAM_NAME = "heroes";
 
@@ -917,7 +918,7 @@ class FightServiceTests {
 			this.fightConfig.hero().fallback().name(),
 			this.fightConfig.hero().fallback().level(),
 			this.fightConfig.hero().fallback().picture(),
-			this.fightConfig.hero().fallback().powers()
+			FALLBACK_HERO_POWERS
 		);
 	}
 

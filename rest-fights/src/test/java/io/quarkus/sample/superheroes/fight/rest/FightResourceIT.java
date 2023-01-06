@@ -98,7 +98,7 @@ public class FightResourceIT {
 	private static final String HEROES_TEAM_NAME = "heroes";
 	private static final String DEFAULT_HERO_NAME = "Super Baguette";
 	private static final String DEFAULT_HERO_PICTURE = "super_baguette.png";
-	private static final String DEFAULT_HERO_POWERS = "eats baguette really quickly";
+  private static final Set<Power> DEFAULT_HERO_POWERS = Set.of(new Power("baguette", "Base", 10, "super_baguette.png", "eats baguette really quickly"));
 	private static final int DEFAULT_HERO_LEVEL = 62;
 
 	private static final Hero DEFAULT_HERO = new Hero(
@@ -119,7 +119,7 @@ public class FightResourceIT {
 
 	private static final String FALLBACK_HERO_NAME = "Fallback hero";
 	private static final String FALLBACK_HERO_PICTURE = "https://dummyimage.com/280x380/1e8fff/ffffff&text=Fallback+Hero";
-	private static final String FALLBACK_HERO_POWERS = "Fallback hero powers";
+	private static final Set<Power> FALLBACK_HERO_POWERS = Set.of(new Power("Fallback hero Super Power", "Base", 10, "chocolat.png", "fallback..."));
 	private static final int FALLBACK_HERO_LEVEL = 1;
 
 	private static final Hero FALLBACK_HERO = new Hero(
@@ -230,7 +230,7 @@ public class FightResourceIT {
 		assertThat(randomFighter.getHero().getName(), is(FALLBACK_HERO_NAME));
 		assertThat(randomFighter.getHero().getLevel(), is(FALLBACK_HERO_LEVEL));
 		assertThat(randomFighter.getHero().getPicture(), is(FALLBACK_HERO_PICTURE));
-		assertThat(randomFighter.getHero().getPowers(), is(FALLBACK_HERO_POWERS));
+		assertThat(randomFighter.getHero().getPowers(), equalTo(FALLBACK_HERO_POWERS));
 		assertThat(randomFighter.getVillain(), notNullValue());
 		assertThat(randomFighter.getVillain().getName(), is(DEFAULT_VILLAIN_NAME));
 		assertThat(randomFighter.getVillain().getLevel(), is(DEFAULT_VILLAIN_LEVEL));
@@ -276,7 +276,7 @@ public class FightResourceIT {
 		assertThat(randomFighter.getHero().getName(), is(DEFAULT_HERO_NAME));
 		assertThat(randomFighter.getHero().getLevel(), is(DEFAULT_HERO_LEVEL));
 		assertThat(randomFighter.getHero().getPicture(), is(DEFAULT_HERO_PICTURE));
-		assertThat(randomFighter.getHero().getPowers(), is(DEFAULT_HERO_POWERS));
+		assertThat(randomFighter.getHero().getPowers(), equalTo(DEFAULT_HERO_POWERS));
 		assertThat(randomFighter.getVillain(), notNullValue());
 		assertThat(randomFighter.getVillain().getName(), is(FALLBACK_VILLAIN_NAME));
 		assertThat(randomFighter.getVillain().getLevel(), is(FALLBACK_VILLAIN_LEVEL));
@@ -320,7 +320,7 @@ public class FightResourceIT {
 		assertThat(randomFighter.getHero().getName(), is(FALLBACK_HERO_NAME));
 		assertThat(randomFighter.getHero().getLevel(), is(FALLBACK_HERO_LEVEL));
 		assertThat(randomFighter.getHero().getPicture(), is(FALLBACK_HERO_PICTURE));
-		assertThat(randomFighter.getHero().getPowers(), is(FALLBACK_HERO_POWERS));
+		assertThat(randomFighter.getHero().getPowers(), equalTo(FALLBACK_HERO_POWERS));
 		assertThat(randomFighter.getVillain(), notNullValue());
 		assertThat(randomFighter.getVillain().getName(), is(DEFAULT_VILLAIN_NAME));
 		assertThat(randomFighter.getVillain().getLevel(), is(DEFAULT_VILLAIN_LEVEL));
@@ -412,7 +412,7 @@ public class FightResourceIT {
 		assertThat(randomFighter.getHero().getName(), is(FALLBACK_HERO_NAME));
 		assertThat(randomFighter.getHero().getLevel(), is(FALLBACK_HERO_LEVEL));
 		assertThat(randomFighter.getHero().getPicture(), is(FALLBACK_HERO_PICTURE));
-		assertThat(randomFighter.getHero().getPowers(), is(FALLBACK_HERO_POWERS));
+		assertThat(randomFighter.getHero().getPowers(), equalTo(FALLBACK_HERO_POWERS));
 		assertThat(randomFighter.getVillain(), notNullValue());
 		assertThat(randomFighter.getVillain().getName(), is(FALLBACK_VILLAIN_NAME));
 		assertThat(randomFighter.getVillain().getLevel(), is(FALLBACK_VILLAIN_LEVEL));
@@ -458,7 +458,7 @@ public class FightResourceIT {
 		assertThat(randomFighter.getHero().getName(), is(FALLBACK_HERO_NAME));
 		assertThat(randomFighter.getHero().getLevel(), is(FALLBACK_HERO_LEVEL));
 		assertThat(randomFighter.getHero().getPicture(), is(FALLBACK_HERO_PICTURE));
-		assertThat(randomFighter.getHero().getPowers(), is(FALLBACK_HERO_POWERS));
+		assertThat(randomFighter.getHero().getPowers(), equalTo(FALLBACK_HERO_POWERS));
 		assertThat(randomFighter.getVillain(), notNullValue());
 		assertThat(randomFighter.getVillain().getName(), is(FALLBACK_VILLAIN_NAME));
 		assertThat(randomFighter.getVillain().getLevel(), is(FALLBACK_VILLAIN_LEVEL));
