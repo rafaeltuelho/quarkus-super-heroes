@@ -60,11 +60,10 @@ public class Villain extends PanacheEntityBase {
 
 	/**
 	 * Returns a Set of Powers associated to this Villain
-	 * @return {@code Collections.unmodifiableSet(Set<Power>)}
+	 * @return {@code Set<Power>}
 	 */
   public Set<Power> getPowers() {
     return powers;
-    // return Collections.unmodifiableSet(powers);
   }
 
 	public void addPower(Power power) {

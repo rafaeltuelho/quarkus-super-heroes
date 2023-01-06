@@ -162,8 +162,7 @@ public class VillainService {
 			Power.findByName(p.name).ifPresentOrElse((persistedPower) -> {
 				Log.debugf("Power [%s] already exist in the Database. It will be just associated with this Villain.", persistedPower.name);
 				newPowers.add(persistedPower); // replace by the already persisted power. Thus it will be just updated?!
-			}, 
-			() -> {
+			}, () -> {
 				Log.debugf("Power [%s] doesn't exist yet. It will be persisted and the associated with this Villain.", p.name);
 				newPowers.add(p); // add as a new Power
 			});
