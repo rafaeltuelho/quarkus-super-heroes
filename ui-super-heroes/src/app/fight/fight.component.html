@@ -6,9 +6,9 @@
                 {{figthers.hero.name}}
             </h2>
             <div class="card-pf-body">
-                <div *ngFor="let power of figthers.hero.powers.split(','); index as i;"
+                <div *ngFor="let power of figthers.hero.powers; index as i;"
                     [className]="fighting ? 'shooting_star' : 'off'" >
-                    <p [className]="fighting ? 'visible fw-lighter' : 'visually-hidden'"><small style="font-size: .4rem; word-wrap: normal;">{{power}}</small></p>
+                    <!-- p [className]="fighting ? 'visible fw-lighter' : 'visually-hidden'"><small style="font-size: .4rem; word-wrap: normal;">{{power}}</small></p -->
                 </div>                
                 <div class="fixed-avatar" 
                     [className]="fighting ? 'floating-avatar' : 'fixed-avatar'"
@@ -25,21 +25,22 @@
                     <a data-bs-toggle="collapse" href="#heroPowers" role="button" aria-expanded="false" aria-controls="heroPowers">
                         <i class="powers hero fas fa-atom"></i>
                     </a>
-                    {{figthers.hero.powers.split(',').length}}
+                    {{figthers.hero.powers.length}}
                 </h2>
 
                 <div class="collapse" id="heroPowers">
                     <button 
-                    *ngFor="let power of figthers.hero.powers.split(','); index as i;"
+                    *ngFor="let power of figthers.hero.powers; index as i;"
                     type="button" 
                     class="btn btn-outline-secondary position-relative"
                     style="--bs-btn-padding-y: .25rem; --bs-btn-padding-x: .5rem; --bs-btn-font-size: .75rem; --bs-btn-border-width: 0">
-                    {{power}}
+                    {{power.name}}
                     <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                        {{i}}
+                        {{power.score}}
                     </span>
                 </button>                    
                 </div>
+                
             </div>
         </div>
         </div>

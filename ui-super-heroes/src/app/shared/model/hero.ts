@@ -9,6 +9,7 @@
  * https://github.com/swagger-api/swagger-codegen.git
  * Do not edit the class manually.
  */
+import { Power } from "./power";
 
 /**
  * The hero fighting against the villain
@@ -17,7 +18,7 @@ export class Hero {
   constructor(
     public name?: string,
     public picture?: string,
-    public powers?: string,
+    public powers?: Array<Power>,
     public level?: bigint
 ) {
 }
