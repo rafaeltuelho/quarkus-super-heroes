@@ -37,7 +37,9 @@
 
         function togglePowersExpandCollapse(heroId) {
             let isExpanded = $("#toggle_expand_collapse_" + heroId).text() == 'Show less';
-
+            //let heroId = hero.id;
+            //let powers = hero.powers;
+            console.log('HeroId: ' + heroId);
             if (isExpanded) {
                 $("#toggle_expand_collapse_" + heroId).text('Show more')
                 $("#toggle_powers_" + heroId).removeClass('pf-m-expanded')
@@ -48,6 +50,7 @@
                 $("#toggle_expand_collapse_" + heroId).text('Show less')
                 $("#toggle_powers_" + heroId).addClass('pf-m-expanded')
                 $("#expand_collapse_button_" + heroId).attr('aria-expanded', true)
+                //$('#json-renderer').jsonViewer(powers);
                 $("#hero_powers_" + heroId).show()
             }
         }
@@ -114,25 +117,72 @@
             <tbody role="rowgroup">
             {#for hero in heroes}
                 <tr role="row">
-                <td role="cell" data-label="ID">{hero.id}</td>
-                <td role="cell" data-label="Name">{hero.name}</td>
-                <td role="cell" data-label="Picture" style="vertical-align: top;"><a href="{hero.picture}" target="_blank"><img src="{hero.picture}" alt="Picture for {hero.name}"/></a></td>
-                <td role="cell" data-label="Other Name">{hero.otherName}</td>
-                <td role="cell" data-label="Level">{hero.level}</td>
-                <td role="cell" data-label="Powers">
-                <div class="pf-c-expandable-section pf-m-expanded" id="toggle_powers_{hero.id}">
-                <button id="expand_collapse_button_{hero.id}"
-                        type="button"
-                        class="pf-c-expandable-section__toggle"
-                        aria-expanded="true">
-    <span class="pf-c-expandable-section__toggle-icon">
-      <i class="fas fa-angle-right" aria-hidden="true"></i>
-    </span>
-                    <span id="toggle_expand_collapse_{hero.id}" class="pf-c-expandable-section__toggle-text" onclick="togglePowersExpandCollapse({hero.id})">Show less</span>
-                </button>
-                <div id="hero_powers_{hero.id}" class="pf-c-expandable-section__content">{hero.powers}</div>
-                </div>
-                </td>
+                    <td role="cell" data-label="ID">{hero.id}</td>
+                    <td role="cell" data-label="Name">{hero.name}</td>
+                    <td role="cell" data-label="Picture" style="vertical-align: top;"><a href="{hero.picture}" target="_blank"><img src="{hero.picture}" alt="Picture for {hero.name}"/></a></td>
+                    <td role="cell" data-label="Other Name">{hero.otherName}</td>
+                    <td role="cell" data-label="Level">{hero.level}</td>
+                    <td role="cell" data-label="Powers">
+                        <div class="pf-c-expandable-section pf-m-expanded" id="toggle_powers_{hero.id}">
+                            <button id="expand_collapse_button_{hero.id}"
+                                    type="button"
+                                    class="pf-c-expandable-section__toggle"
+                                    aria-expanded="true">
+                                <span class="pf-c-expandable-section__toggle-icon">
+                                    <i class="fas fa-angle-right" aria-hidden="true"></i>
+                                </span>
+                                <span id="toggle_expand_collapse_{hero.id}" class="pf-c-expandable-section__toggle-text" onclick="togglePowersExpandCollapse({hero.id})">Show less</span>
+                            </button>
+                            <div id="hero_powers_{hero.id}" 
+                            class="pf-l-gallery pf-m-gutter"
+                            style="--pf-l-gallery--GridTemplateColumns--min: 130px;">
+                            {#for power in hero.powers}
+                            <div class="pf-c-card pf-m-compact">
+                                <div class="pf-c-card__body">
+                                    <ul class="pf-c-list pf-m-plain" role="list">
+                                    <li class="pf-c-list__item">
+                                        <span class="pf-c-list__item-icon">
+                                        <i class="fas fa-book-open fa-fw" aria-hidden="true"></i>
+                                        </span>
+                                        <span class="pf-c-list__item-text">{power.name}</span>
+                                    </li>
+                                    <li class="pf-c-list__item">
+                                        <span class="pf-c-list__item-icon">
+                                        <i class="fas fa-key fa-fw" aria-hidden="true"></i>
+                                        </span>
+                                        <span class="pf-c-list__item-text">Aliases: {power.aliases}</span>
+                                    </li>
+
+                                    {! <li class="pf-c-list__item">
+                                        <span class="pf-c-list__item-icon">
+                                        <i class="fas fa-key fa-fw" aria-hidden="true"></i>
+                                        </span>
+                                        <span class="pf-c-list__item-text">Description: </span>
+                                        <span class="pf-c-truncate">
+                                            <span class="pf-c-truncate__start">{power.description}</span>
+                                        </span>
+                                    </li> !}
+
+                                    <li class="pf-c-list__item">
+                                        <span class="pf-c-list__item-icon">
+                                        <i class="fas fa-arrow-right fa-fw" aria-hidden="true"></i>
+                                        </span>
+                                        <span class="pf-c-list__item-text">Tier: {power.tier}</span>
+                                    </li>
+                                    <li class="pf-c-list__item">
+                                        <span class="pf-c-list__item-icon">
+                                        <i class="fas fa-tachometer-alt fa-fw" aria-hidden="true"></i>
+                                        </span>
+                                        <span class="pf-c-list__item-text">Score: {power.score}</span>
+                                    </li>
+                                    </ul>
+                                </div>
+                            </div> <!-- /card -->
+                            {/for}
+                            </div>
+                            </div>
+                        </div>
+                    </td>
                 </tr>
             {/for}
             </tbody>
