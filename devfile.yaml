@@ -1,0 +1,33 @@
+schemaVersion: 2.2.0
+metadata:
+  name: quarkus-super-hero
+components:
+  - name: tools
+    container:
+      image: registry.redhat.io/devspaces/udi-rhel8@sha256:de81824e6ccf82a286a28566432d4f43928a989c570578c4b4df9484ef136cca
+      env:
+        - name: QUARKUS_HTTP_HOST
+          value: 0.0.0.0
+        - name: KUBEDOCK_ENABLED
+          value: true
+      endpoints:
+        - exposure: none
+          name: debug
+          protocol: tcp
+          targetPort: 5005
+        - exposure: public
+          name: home
+          protocol: http
+          targetPort: 8080
+          path: /
+      volumeMounts:
+        - name: m2
+          path: /home/user/.m2
+      memoryLimit: 6Gi
+      memoryRequest: 2Gi
+      cpuRequest: 1000m
+      cpuLimit: 3000m
+      mountSources: true
+  - name: m2
+    volume:
+      size: 1G
