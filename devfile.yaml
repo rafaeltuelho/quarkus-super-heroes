@@ -10,14 +10,14 @@ components:
           value: 0.0.0.0
         - name: KUBEDOCK_ENABLED
           value: 'true'
-        - name: KUBEDOCK_VERSION
-          value: '0.13.0'
         - name: TESTCONTAINERS_RYUK_DISABLED
           value: 'true'
         - name: TESTCONTAINERS_CHECKS_DISABLE
           value: 'true'
         - name: DOCKER_HOST
           value: 'tcp://127.0.0.1:2475'
+        - name: QUARKUS_DATASOURCE_DEVSERVICES_VOLUMES_  # <-- https://quarkus.io/guides/databases-dev-services#quarkus-datasource-config-group-dev-services-build-time-config_quarkus.datasource.devservices.volumes-volumes
+          value: '/var/lib/postgresql/'
       endpoints:
         - exposure: none
           name: debug
