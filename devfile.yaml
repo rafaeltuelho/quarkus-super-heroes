@@ -16,8 +16,8 @@ components:
           value: 'true'
         - name: DOCKER_HOST
           value: 'tcp://127.0.0.1:2475'
-        - name: QUARKUS_DATASOURCE_DEVSERVICES_VOLUMES_  # <-- https://quarkus.io/guides/databases-dev-services#quarkus-datasource-config-group-dev-services-build-time-config_quarkus.datasource.devservices.volumes-volumes
-          value: '/var/lib/postgresql/'
+        - name: QUARKUS_DATASOURCE_DEVSERVICES_VOLUMES
+          value: '/home/user/.pg-data=/var/lib/postgresql/'
       endpoints:
         - exposure: none
           name: debug
@@ -31,11 +31,16 @@ components:
       volumeMounts:
         - name: m2
           path: /home/user/.m2
+        - name: data
+          path: /home/user/.pg-data
       memoryLimit: 6Gi
       memoryRequest: 2Gi
       cpuRequest: 1000m
       cpuLimit: 3000m
       mountSources: true
   - name: m2
+    volume:
+      size: 1G
+  - name: data
     volume:
       size: 1G

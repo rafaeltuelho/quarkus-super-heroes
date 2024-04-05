@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",
-    "dev": "concurrently \"npm start\" \"ng serve --proxy-config ng.proxy.config.json --prod\"",
+    "dev": "concurrently \"npm start\" \"ng serve --proxy-config ng.proxy.config.json --configuration production\"",
     "start": "node serving/server.js",
     "build": "./package.sh",
     "test": "ng test",
@@ -24,7 +24,7 @@
     "@angular-devkit/build-angular": "^12.2.7",
     "@angular/animations": "~12.2.8",
     "@angular/cdk": "~12.2.8",
-    "@angular/cli": "~12.2.8",
+    "@angular/cli": "^12.2.18",
     "@angular/common": "~12.2.8",
     "@angular/compiler": "~12.2.8",
     "@angular/compiler-cli": "~12.2.8",

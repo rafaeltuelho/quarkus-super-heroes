@@ -13,7 +13,8 @@
 import {EventEmitter, Inject, Injectable, Optional, Output} from '@angular/core';
 import {HttpClient, HttpEvent, HttpHeaders, HttpResponse} from '@angular/common/http';
 
-import {Observable} from 'rxjs';
+import {Observable, timer, interval, Subject} from 'rxjs';
+import {take, takeUntil, switchMap} from 'rxjs/operators';
 
 import {Fight} from '../model/fight';
 import {Fighters} from '../model/fighters';
@@ -223,6 +224,8 @@ export class FightService {
       headers = headers.set('Content-Type', httpContentTypeSelected);
     }
 
+    // this.performAttackSession();
+
     return this.httpClient.post<URI>(`${this.basePath}/api/fights`,
       body,
       {
@@ -232,6 +235,37 @@ export class FightService {
         reportProgress: reportProgress
       }
     );
+  }
+
+  performAttackSession() {
+    // Create a subject to control the task execution
+    const taskControl = new Subject();
+    // Create an observable that emits a value every second
+    const intervalObservable = interval(1000);
+    
+    // Define the tasks that can last up to 60 seconds
+    function performTask() {
+      return intervalObservable.pipe(takeUntil(taskControl), take(60));
+    }
+    
+    // Execute the tasks within the time window
+    const taskExecution = performTask();
+    
+    // Subscribe to the task execution
+    const subscription = taskExecution.subscribe(
+      (x) => {
+        // Task logic here
+        console.log('Performing task...' + x);
+      },
+      (err) => {
+        console.error('something wrong occurred: ' + err);
+      },
+      () => {
+        console.log('Task execution completed.');
+        subscription.unsubscribe();
+      }
+    );
+
   }
 
   /**
@@ -270,5 +304,42 @@ export class FightService {
       }
     );
   }
+
+  /**
+   * Attack
+   *
+   * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+   * @param reportProgress flag to report request and response progress.
+   */
+  // tag::adocService[]
+  // public apiFightsRandomfightersGet(observe?: 'body', reportProgress?: boolean): Observable<Fighters>;
+  // public apiFightsRandomfightersGet(observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<Fighters>>;
+  // public apiFightsRandomfightersGet(observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<Fighters>>;
+  // end::adocService[]
+  // public apiFightsAttack(observe: any = 'body', reportProgress: boolean = false): Observable<any> {
+
+  //   let headers = this.defaultHeaders;
+
+  //   // to determine the Accept header
+  //   let httpHeaderAccepts: string[] = [
+  //     'application/json'
+  //   ];
+  //   const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+  //   if (httpHeaderAcceptSelected != undefined) {
+  //     headers = headers.set('Accept', httpHeaderAcceptSelected);
+  //   }
+
+  //   // to determine the Content-Type header
+  //   const consumes: string[] = [];
+  
+  //   // return this.httpClient.get<Fighters>(`${this.basePath}/api/fights/randomfighters`,
+  //   //   {
+  //   //     withCredentials: this.configuration.withCredentials,
+  //   //     headers: headers,
+  //   //     observe: observe,
+  //   //     reportProgress: reportProgress
+  //   //   }
+  //   // );
+  // }
 
 }

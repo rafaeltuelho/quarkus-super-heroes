@@ -1,5 +1,6 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
 import { CountdownComponent, CountdownConfig, CountdownEvent } from 'ngx-countdown';
+import { FightService } from '../shared';
 
 @Component({
   selector: 'demo-notify',
@@ -23,9 +24,16 @@ import { CountdownComponent, CountdownConfig, CountdownEvent } from 'ngx-countdo
   },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class NotifyComponent {
-  config: CountdownConfig = { leftTime: 10, notify: [2, 5] };
+export class NotifyComponent implements OnInit {
+  config: CountdownConfig = { leftTime: 60, demand: true, notify: [10] };
   notify = '';
+
+  constructor(private fightService: FightService) {
+  }
+
+  ngOnInit() {
+    
+  }
 
   handleEvent(e: CountdownEvent) {
     this.notify = e.action.toUpperCase();

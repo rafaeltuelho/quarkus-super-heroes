@@ -1,12 +1,14 @@
 # Superheroes Battle UI
 
 ## Table of Contents
-- [Introduction](#introduction)
-- [Building the Application](#building-the-application)
-- [Local Development](#local-development)
-- [Running the Application](#running-the-application)
-- [Running Locally via Docker Compose](#running-locally-via-docker-compose)
-- [Deploying to Kubernetes](#deploying-to-kubernetes)
+- [Superheroes Battle UI](#superheroes-battle-ui)
+  - [Table of Contents](#table-of-contents)
+  - [Introduction](#introduction)
+  - [Building the Application](#building-the-application)
+  - [Local Development](#local-development)
+  - [Running the Application](#running-the-application)
+  - [Running Locally via Docker Compose](#running-locally-via-docker-compose)
+  - [Deploying to Kubernetes](#deploying-to-kubernetes)
     - [Routing](#routing)
 
 ## Introduction
@@ -30,6 +32,7 @@ Currently, the `env.js` will expose just the `API_BASE_URL` that's set at runtim
 You also need to make sure the angular CLI is installed (`npm install @angular/cli@12.2.8`).
 
 ```bash
+export NODE_OPTIONS=--openssl-legacy-provider #to avoid issues with older openssl on Mac
 npm run build
 ```
 
@@ -37,6 +40,7 @@ npm run build
 Use the following command:
 
 ```shell
+export API_BASE_URL=http://localhost:8082 
 npm run dev
 ```
 
