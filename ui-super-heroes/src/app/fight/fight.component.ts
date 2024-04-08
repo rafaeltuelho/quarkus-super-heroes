@@ -23,6 +23,7 @@ export class FightComponent implements OnInit {
   fighting: boolean;
   firedState: boolean;
   balls: Ball[];
+  avatarShieldBalls: Ball[] = [];
   canvas: HTMLCanvasElement;
 
 
@@ -32,7 +33,10 @@ export class FightComponent implements OnInit {
   ngOnInit() {
     this.newFighters();
     this.canvas = document.getElementById('canvas-fight') as HTMLCanvasElement;
-    this.drawAvatars();
+    let fightArena = document.getElementById('fight-arena');
+    this.canvas.width = fightArena.clientWidth;
+    this.canvas.height = fightArena.clientHeight;
+    this.createAvatarShieldBalls();
   }
 
   fire() {
@@ -53,18 +57,26 @@ export class FightComponent implements OnInit {
     );
     
     this.balls = this.createPowerBalls();
+    console.debug(this.avatarShieldBalls);
     this.loop();
   }
 
   loop() {
-    this.canvas.getContext("2d").fillStyle = "rgba(0 0 0 / 25%)";
+    this.canvas.getContext("2d").fillStyle = "rgba(246,252,250,0.5)";
     this.canvas.getContext("2d").fillRect(0, 0, this.canvas.width, this.canvas.height);
 
     for (const ball of this.balls) {
       ball.draw();
       ball.update();
-        // ball.collisionDetect();
+      // ball.collisionDetect(this.avatarShieldBalls);
     }
+  
+    for (const avatarShieldBall of this.avatarShieldBalls) {
+      avatarShieldBall.draw();
+      avatarShieldBall.update();
+      avatarShieldBall.collisionDetect(this.balls);
+    }
+
   
     window.requestAnimationFrame(this.loop.bind(this));
   }
@@ -89,56 +101,63 @@ export class FightComponent implements OnInit {
 
     let heroPowerBalls = this.fighters.hero.powers.map(power => {
       return new Ball(
-        this.random(0 + size, this.canvasLeftBoxWidth() - size),
+        'hero',
+        this.random(0 + size, this.canvasLeftBoxXZero() - size),
         this.random(0 + size, this.canvas.height - size),
-        0.3,//this.random(7, power.score), 
-        0.04,
+        this.random(1, power.score),
+        0,
         'blue',
-        size,//power.score, 
+        size + (size * power.score /10),
         'canvas-fight');
     });
 
     let villainPowerBalls = this.fighters.villain.powers.map(power => {
       return new Ball(
-        this.random(size + this.canvasRightBoxWidth(), this.canvas.width - size),
+        'villain',
+        this.random(size + this.canvasRightBoxXZero(), this.canvas.width - size),
         this.random(0 + size, this.canvas.height - size), 
-        -0.3,//this.random(7, power.score),
-        0.04, 
+        this.random(-1, -power.score),
+        0, 
         'red',
-        size,//power.score, 
+        size + (size * power.score /10),
         'canvas-fight');
     });
 
     return [...villainPowerBalls, ...heroPowerBalls];
   }
 
-  drawAvatars() {
+  createAvatarShieldBalls() {
     let heroAvatarBall = new Ball(
-      this.canvasLeftBoxWidth() / 2,
+      'hero',
+      this.canvasLeftBoxXZero() / 2,
       this.canvas.height / 2, 
       0,
       0, 
-      'blue',
-      25,
+      'rgba(0, 0, 0, 0)',
+      150,
       'canvas-fight');
     heroAvatarBall.draw();
+    this.avatarShieldBalls.push(heroAvatarBall);
 
-    let villainAvatarBall = new Ball(  
-    this.canvas.width - (this.canvasRightBoxWidth() / 4),
+    let villainAvatarBall = new Ball(
+    'villain',
+    this.canvas.width - (this.canvasRightBoxXZero() / 4),
     this.canvas.height / 2, 
     0,
     0, 
-    'red',
-    50,
+    'rgba(0, 0, 0, 0)',
+    150,
     'canvas-fight');
     villainAvatarBall.draw();
+
+    this.avatarShieldBalls.push(villainAvatarBall);
   }
 
-  canvasRightBoxWidth() {
+  canvasRightBoxXZero() {
     return this.canvas.width - (this.canvas.width / 3);
   }
 
-  canvasLeftBoxWidth() {
+  canvasLeftBoxXZero() {
     return this.canvas.width / 3;
   }
 }

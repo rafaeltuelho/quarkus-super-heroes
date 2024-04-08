@@ -21,6 +21,7 @@
   display: inline-block;
   position: relative;
   margin-bottom: 20px;
+  margin-bottom: 10px;
 	//width: 80%;
   width: 300px;
   height: 300px;
@@ -30,7 +31,7 @@
 	overflow: hidden;
 	box-shadow: 0 2px 15px 0px rgba(39, 113, 186, 0.343);
 	transform: translatey(1px);
-	animation: float 2s ease-in-out infinite;
+	animation: float 1s ease-in-out infinite;
 }
 
 @keyframes float {

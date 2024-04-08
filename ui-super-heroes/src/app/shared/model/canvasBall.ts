@@ -10,8 +10,10 @@ export class Ball {
   public color: string;
   public velY: number; 
   public size: number;
+  public type: 'hero' | 'villain' | 'avatar';
 
   constructor(
+    type: 'hero' | 'villain' | 'avatar',
     x: number, 
     y: number, 
     velX: number, 
@@ -30,6 +32,7 @@ export class Ball {
     this.velY = velY;
     this.color = color;
     this.size = size;
+    this.type = type;
   }
 
   degToRad(degrees) {
@@ -65,26 +68,30 @@ export class Ball {
     this.y += this.velY;
   }
 
-  // collisionDetect() {
-  //   for (const ball of balls) {
-  //     // if (!(this === ball)) {
-  //       const dx = this.x - ball.x;
-  //       const dy = this.y - ball.y;
-  //       const distance = Math.sqrt(dx * dx + dy * dy);
+  random(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+  }
+  // function to generate random RGB color value
+  randomRGB() {
+    return `rgba(${this.random(0, 255)},${this.random(0, 1)},${this.random(0, 1)},${this.random(0, 1)})`;
+    // return `rgba(255,0,0,0.070)`;
+  }
 
-  //       if (distance < this.size + ball.size) {
-  //         ball.color = this.color = randomRGB();
-  //       }
-  //     // }
-  //   }
-  // }
+  collisionDetect(targetBalls: Ball[]) {
+    // console.debug(targetBalls);
+    for (const targetBall of targetBalls) {
+      if (!(this.type === targetBall.type)) {
+        // console.log('collisionDetect[  power ball: ' + this.type + ' - targetBall: ' + targetBall.type + ' ]');
+        const dx = this.x - targetBall.x;
+        const dy = this.y - targetBall.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
 
-  // collision({ obj }) {
-  //   return (
-  //     box1.position.x + box1.width >= box2.position.x && // box1 right collides with box2 left
-  //     box2.position.x + box2.width >= box1.position.x && // box2 right collides with box1 left
-  //     box1.position.y + box1.height >= box2.position.y && // box1 bottom collides with box2 top
-  //     box2.position.y + box2.height >= box1.position.y // box1 top collides with box2 bottom
-  //   )
-  // }
+        if (distance < this.size + targetBall.size) {
+          this.color = targetBall.color = this.randomRGB();//'rgba(235, 235, 235, 0.8)';
+          this.size += targetBall.size/1000;
+          targetBall.size = 0;
+        }
+      }
+    }
+  }
 }
